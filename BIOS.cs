@@ -99,8 +99,11 @@ namespace CPU_Concept
                     case "RUN":
                         _inBios = false;
                         break;
+                    case "RST":
+                        systemCPU.Reset();
+                        break;
                     default:
-                        
+                        Console.WriteLine("Unknown command.");
                         break;
                 }
             }

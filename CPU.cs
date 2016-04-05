@@ -150,6 +150,10 @@ namespace CPU_Concept
         {
             _tempRegister.WriteRegister(_register0.ReadRegister() - _register1.ReadRegister());
         }
+        private void DoMultiply()
+        {
+
+        }
         private void DoHalt()
         {
             DoDumpRegisters();
@@ -178,7 +182,7 @@ namespace CPU_Concept
             this._programCounter = 0;
         }
 
-        private void Reset()
+        public void Reset()
         {
             this._overFlow = false;
             this._underFlow = false;
