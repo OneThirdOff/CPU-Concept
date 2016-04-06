@@ -14,7 +14,7 @@ namespace CPU_Concept
         private CPU_Registers _instructionRegister;
         private int _programCounter;
         private Memory _ProgramMemory;
-        private string _haltRegisters;
+        private string[] _haltRegisters;
 
         private bool _overFlow;
         private bool _underFlow;
@@ -24,7 +24,7 @@ namespace CPU_Concept
         public bool Overflow { get { return this._overFlow; } }
         public bool Underflow { get { return this._underFlow; } }
         public bool Halt { get { return this._halt; } }
-        public string HaltRegisters { get { return _haltRegisters; } }
+        public string[] HaltRegisters { get { return _haltRegisters; } }
         public void WriteMemory(int Adress, byte ByteToWrite)
         {
             _ProgramMemory.WriteMemByte(Adress, ByteToWrite);
@@ -33,7 +33,18 @@ namespace CPU_Concept
         {
             return _ProgramMemory.ReadMemByte(Adress);
         }
+        public int[] ReadMemory(int Address, int Length)
+        {
+            int[] returnBytes = new int[Length];
+            for (int i = Address; i < Length; i++)
+            {
+                returnBytes[Address] = ReadMemory(Address);
+            }
+
+            return returnBytes;
+        }
         public int MemorySize { get { return _ProgramMemory.MemorySize; } }
+        
         public void SetFault()
         {
             _fault = true;
@@ -51,6 +62,7 @@ namespace CPU_Concept
             READ0,
             READ1,
             ADD,
+            MUX,
             SUB,
             HALT,
             WAIT
@@ -69,18 +81,13 @@ namespace CPU_Concept
         }
         private void DoDumpRegisters()
         {
-            _haltRegisters = "P:" + _programCounter
-                + " I:" + _instructionRegister.ReadRegister()
-                + " 0:" + _register0.ReadRegister()
-                + " 1:" + _register1.ReadRegister()
-                + " t:" + _tempRegister.ReadRegister()
-                + " O:" + _overFlow
-                + " U:" + _underFlow + "\r\n"
-                + " CPU-Mem:";
-            foreach(int memByte in _ProgramMemory.ReadMemSequence(0, _ProgramMemory.MemorySize))
-            {
-                _haltRegisters = _haltRegisters + memByte;
-            }
+            _haltRegisters[0] = Convert.ToString(_programCounter);
+            _haltRegisters[1] = Convert.ToString(_instructionRegister.ReadRegister());
+            _haltRegisters[2] = Convert.ToString(_register0.ReadRegister());
+            _haltRegisters[3] = Convert.ToString(_register1.ReadRegister());
+            _haltRegisters[4] = Convert.ToString(_tempRegister.ReadRegister());
+            _haltRegisters[5] = Convert.ToString(_overFlow);
+            _haltRegisters[6] = Convert.ToString(_underFlow);
         }
 
         private void DoNoP()
@@ -152,7 +159,7 @@ namespace CPU_Concept
         }
         private void DoMultiply()
         {
-
+            _tempRegister.WriteRegister(_register0.ReadRegister() * _register1.ReadRegister());
         }
         private void DoHalt()
         {
@@ -165,6 +172,7 @@ namespace CPU_Concept
         }
         #endregion
 
+
         public CPU(int BusWidth)
         {
             this._register0 = new CPU_Registers(BusWidth);
@@ -172,6 +180,7 @@ namespace CPU_Concept
             this._tempRegister = new CPU_Registers(BusWidth * 2);
             this._instructionRegister = new CPU_Registers(BusWidth);
             this._ProgramMemory = new Memory(256);
+            this._haltRegisters = new string[8];
         }
 
         public void Initialize()
@@ -223,6 +232,9 @@ namespace CPU_Concept
                     break;
                 case InstructionSet.SUB:
                     DoSubtract();
+                    break;
+                case InstructionSet.MUX:
+                    DoMultiply();
                     break;
                 case InstructionSet.HALT:
                     DoHalt();

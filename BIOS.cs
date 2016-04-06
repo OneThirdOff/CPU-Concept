@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,23 +9,31 @@ namespace CPU_Concept
 {
     class BIOS
     {
-        private bool _inBios;
+        private bool _inInterpreter;
         private byte[] _programToRun = new byte[256];
         private CPU systemCPU;
 
         string _biosInput;
         string[] _splitBiosInput;
+        string systemVersion;
 
-        public bool InBios { get { return _inBios; } }
+        public bool InBios { get { return _inInterpreter; } }
         public byte[] ProgramToRun { get { return _programToRun; } }
         public bool CPUFault { get { return systemCPU.Fault; } }
 
+        public Version version;
+
         public BIOS()
         {
+            version = Assembly.GetEntryAssembly().GetName().Version;
             systemCPU = new CPU(8);
             systemCPU.Initialize();
-            _inBios = true;
+            _inInterpreter = true;
             checkCPU();
+
+            //systemVersion = ((AssemblyVersionAttribute)Attribute.GetCustomAttribute( 
+            //    Assembly.GetExecutingAssembly(), typeof(AssemblyVersionAttribute), false))
+            //   .Version;
         }
 
         private void checkCPU()
@@ -37,92 +46,154 @@ namespace CPU_Concept
                     DoCPUFault(i);
                     break;
                 }
-                systemCPU.WriteMemory(i, 0);
+                systemCPU.WriteMemory(i, (byte)0);
+                systemCPU.WriteMemory(0, (byte)10); //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
             }
         }
 
         public void DoCPUFault(int FaultAddress)
         {
             systemCPU.SetFault();
-            _inBios = false;
+            _inInterpreter = false;
             Console.WriteLine("CPU Fault at " + FaultAddress);
             Console.WriteLine(systemCPU.HaltRegisters);
         }
 
-        public void Update()
+        public void RunBios()
         {
-            Console.WriteLine("BIOS Loaded. Program 1 op per line, prefix with linenumber.");
+            Console.WriteLine("BIOS " + version + " Loaded. \r\n Program 1 operation per line, prefix with linenumber to correct line.");
+            DoRunInterpreter();
+
+            //Write the program to memory.
+            //for (int i = 0; i < ProgramToRun.Count(); i++)
+            //{
+            //    systemCPU.WriteMemory(i, ProgramToRun[i]);
+            //}
+            while (!systemCPU.Halt)
+            {
+                systemCPU.Update();
+            }
+            Console.WriteLine("Dump registers? y/n ");
+            string getResponse = Console.ReadLine();
+            if (getResponse.ToUpper().Equals("Y") || getResponse.Equals(""))
+            {
+                Console.WriteLine("Dumping CPU registers.");
+                Console.Write("Porgram counter: " + systemCPU.HaltRegisters[0] + "\t");
+                Console.Write("Instruction: " + systemCPU.HaltRegisters[1] + "\r\n");
+                //Console.Write("Counter: " + systemCPU.HaltRegisters[X] + "\t");
+                Console.Write("Register 0: " + systemCPU.HaltRegisters[2] + "\t");
+                Console.Write("Register 1: " + systemCPU.HaltRegisters[3] + "\t");
+                Console.Write("Temporary register: " + systemCPU.HaltRegisters[4] + "\t");
+                Console.Write("Overflow: " + systemCPU.HaltRegisters[5] + "\t");
+                Console.Write("Underflow: " + systemCPU.HaltRegisters[6] + "\r\n");
+                Console.WriteLine("Dumping memory:");
+                for (int i = 1; i < systemCPU.MemorySize + 1; i++)
+                {
+                    Console.Write(systemCPU.ReadMemory(i - 1).ToString("x2"));
+                    if (i % 30 == 0)
+                    {
+                        Console.Write("\r\n");
+                    }
+                    else if (i == systemCPU.MemorySize)
+                    {
+                        Console.Write("\r\n");
+                    }
+                    else if(i % 2 == 0)
+                    {
+                        Console.Write(":");
+                    }
+                }
+                Console.WriteLine("System halted.");
+            }
+        }
+
+        public void DoRunInterpreter()
+        {
+            int programAdress = 0;
             while (InBios)
             {
-                int programAdress = 0;
+                Console.Write(programAdress + ": ");
                 _splitBiosInput = new string[3];
                 _biosInput = Console.ReadLine();
                 _splitBiosInput = _biosInput.Split(' ');
-                programAdress = Convert.ToInt32(_splitBiosInput[0]);
-                switch(_splitBiosInput[1].ToUpper())
+                if (_splitBiosInput[0].ToUpper().Equals("RUN"))
                 {
-                    case "NOP":
-                        _programToRun[programAdress] = 0;
-                        break;
-                    case "LOAD0":
-                        _programToRun[programAdress] = 1;
-                        _programToRun[programAdress + 1] = Convert.ToByte(_splitBiosInput[2]);
-                        break;
-                    case "LOAD1":
-                        _programToRun[programAdress] = 2;
-                        _programToRun[programAdress + 1] = Convert.ToByte(_splitBiosInput[2]);
-                        break;
-                    case "SAVE0":
-                        _programToRun[programAdress] = 3;
-                        break;
-                    case "SAVE1":
-                        _programToRun[programAdress] = 4;
-                        break;
-                    case "READ0":
-                        _programToRun[programAdress] = 5;
-                        break;
-                    case "READ1":
-                        _programToRun[programAdress] = 6;
-                        break;
-                    case "ADD":
-                        _programToRun[programAdress] = 7;
-                        break;
-                    case "SUBTRACT":
-                        _programToRun[programAdress] = 8;
-                        break;
-                    case "HALT":
-                        _programToRun[programAdress] = 9;
-                        break;
-                    case "WAIT":
-                        _programToRun[programAdress] = 10;
-                        break;
-                    case "RUN":
-                        _inBios = false;
-                        break;
-                    case "RST":
-                        systemCPU.Reset();
-                        break;
-                    default:
-                        Console.WriteLine("Unknown command.");
-                        break;
+                    _inInterpreter = false;
+                }
+                else if (!_splitBiosInput[0].Equals(""))
+                {
+                    switch (_splitBiosInput[0].ToUpper())
+                    {
+                        case "NOP":
+                            systemCPU.WriteMemory(programAdress, 0);
+                            programAdress++;
+                            break;
+                        case "LOAD0":
+                            systemCPU.WriteMemory(programAdress, 1);
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
+                            programAdress++;
+                            break;
+                        case "LOAD1":
+                            systemCPU.WriteMemory(programAdress, 2);
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
+                            programAdress++;
+                            break;
+                        case "SAVE0":
+                            systemCPU.WriteMemory(programAdress, 3);
+                            programAdress++;
+                            break;
+                        case "SAVE1":
+                            systemCPU.WriteMemory(programAdress, 4);
+                            programAdress++;
+                            break;
+                        case "READ0":
+                            systemCPU.WriteMemory(programAdress, 5);
+                            programAdress++;
+                            break;
+                        case "READ1":
+                            systemCPU.WriteMemory(programAdress, 6);
+                            programAdress++;
+                            break;
+                        case "ADD":
+                            systemCPU.WriteMemory(programAdress, 7);
+                            programAdress++;
+                            break;
+                        case "SUBTRACT":
+                            systemCPU.WriteMemory(programAdress, 8);
+                            programAdress++;
+                            break;
+                        case "MUX":
+                            systemCPU.WriteMemory(programAdress, 9);
+                            programAdress++;
+                            break;
+                        case "HALT":
+                            systemCPU.WriteMemory(programAdress, 10);
+                            programAdress++;
+                            break;
+                        case "WAIT":
+                            systemCPU.WriteMemory(programAdress, 11);
+                            programAdress++;
+                            break;
+                        case "RST":
+                            systemCPU.Reset();
+                            break;
+                        default:
+                            Console.WriteLine("Unknown command.");
+                            break;
+                    }
+                }
+                else
+                {
+
                 }
             }
-
-            for (int i = 0; i < ProgramToRun.Count(); i++)
-            {
-                systemCPU.WriteMemory(i, ProgramToRun[i]);
-            }
-            while (!systemCPU.Halt)
-            {
-                _inBios = false;
-                systemCPU.Update();
-            }
-            Console.WriteLine(systemCPU.HaltRegisters);
         }
 
         public void DoExitBios()
         {
-            _inBios = false;
+            _inInterpreter = false;
         }
     }
 }

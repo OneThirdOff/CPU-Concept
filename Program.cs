@@ -13,7 +13,7 @@ namespace CPU_Concept
             BIOS systemBios = new BIOS();
             if (!systemBios.CPUFault)
             {
-                systemBios.Update();
+                systemBios.RunBios();
             }
             Console.Read();
         }
