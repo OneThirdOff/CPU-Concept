@@ -3,6 +3,7 @@
 The CPU has, at the moment, two one-bit registers and 256byte of memory. Sequentially accessable.
 No jump funtion yet, so only linear programs.
 
+The built in interpreter will allow the user to code then run the program.
 
 Instructionset:
 
