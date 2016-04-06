@@ -21,7 +21,7 @@ namespace CPU_Concept
         public BIOS()
         {
             version = Assembly.GetEntryAssembly().GetName().Version;
-            systemCPU = new CPU(8, 2);
+            systemCPU = new CPU(8, 16, 2);
             systemCPU.Initialize();
             _inInterpreter = true;
             checkCPU();
@@ -64,8 +64,10 @@ namespace CPU_Concept
             if (getResponse.ToUpper().Equals("Y") || getResponse.Equals(""))
             {
                 Console.WriteLine("Dumping CPU registers.");
-                Console.Write("Porgram counter: " + systemCPU.HaltRegisters[0] + "\t");
-                Console.Write("Instruction: " + systemCPU.HaltRegisters[1] +"\r\n");
+                Console.Write("Program counter: " + systemCPU.HaltRegisters[0] + "\t");
+                Console.Write("Instruction: " + systemCPU.HaltRegisters[1] + "\r\n");
+                Console.Write("Adress: " + systemCPU.Adress + "\t");
+                Console.Write("Adress in range: " + systemCPU.IndexOutOfRange + "\r\n");
                 //Console.Write("Counter: " + systemCPU.HaltRegisters[X] + "\t");
                 Console.Write("Register 0: " + systemCPU.HaltRegisters[2] + "dec" + "\t");
                 Console.Write("Register 1: " + systemCPU.HaltRegisters[3] + "dec" + "\t");
@@ -114,52 +116,42 @@ namespace CPU_Concept
                             systemCPU.WriteMemory(programAdress, 0);
                             programAdress++;
                             break;
-                        case "LOAD0":
+                        case "LOAD":
                             systemCPU.WriteMemory(programAdress, 1);
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                             programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                            programAdress++;
                             break;
-                        case "LOAD1":
+                        case "SAVE":
                             systemCPU.WriteMemory(programAdress, 2);
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                             programAdress++;
                             break;
-                        case "SAVE0":
+                        case "READ":
                             systemCPU.WriteMemory(programAdress, 3);
                             programAdress++;
                             break;
-                        case "SAVE1":
+                        case "ADD":
                             systemCPU.WriteMemory(programAdress, 4);
                             programAdress++;
                             break;
-                        case "READ0":
+                        case "SUB":
                             systemCPU.WriteMemory(programAdress, 5);
                             programAdress++;
                             break;
-                        case "READ1":
+                        case "MUX":
                             systemCPU.WriteMemory(programAdress, 6);
                             programAdress++;
                             break;
-                        case "ADD":
+                        case "DIV":
                             systemCPU.WriteMemory(programAdress, 7);
                             programAdress++;
                             break;
-                        case "SUB":
-                            systemCPU.WriteMemory(programAdress, 8);
-                            programAdress++;
-                            break;
-                        case "MUX":
-                            systemCPU.WriteMemory(programAdress, 9);
-                            programAdress++;
-                            break;
-                        case "DIV":
-                            systemCPU.WriteMemory(programAdress, 10);
-                            programAdress++;
-                            break;
                         case "SHL":
-                            systemCPU.WriteMemory(programAdress, 11);
+                            systemCPU.WriteMemory(programAdress, 8);
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                             programAdress++;
@@ -167,19 +159,19 @@ namespace CPU_Concept
                             programAdress++;
                             break;
                         case "SHR":
-                            systemCPU.WriteMemory(programAdress, 12);
+                            systemCPU.WriteMemory(programAdress, 9);
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
                             programAdress++;
                             break;
-                        case "HALT":
-                            systemCPU.WriteMemory(programAdress, 255);
+                        case "WAIT":
+                            systemCPU.WriteMemory(programAdress, 10);
                             programAdress++;
                             break;
-                        case "WAIT":
-                            systemCPU.WriteMemory(programAdress, 11);
+                        case "HALT":
+                            systemCPU.WriteMemory(programAdress, 255);
                             programAdress++;
                             break;
                         case "RST":
