@@ -27,25 +27,27 @@ namespace CPU_Concept
         public string[] HaltRegisters { get { return _haltRegisters; } }
         public void WriteMemory(int Adress, byte ByteToWrite)
         {
-            _ProgramMemory.WriteMemByte(Adress, ByteToWrite, out _adressInRange);
-            if(!_adressInRange)
-            {
-                this._adressInRange = _adressInRange;
-                DoCrash();
-            }
+            _ProgramMemory.WriteMemByte(Adress, ByteToWrite); //, out _adressInRange
+            //if (!_adressInRange)
+            //{
+            //    this._adressInRange = _adressInRange;
+            //    DoCrash();
+            //}
         }
         public int ReadMemory(int Adress)
         {
-            int returnValue =  _ProgramMemory.ReadMemByte(Adress); //, out _adressInRange
-            if (_adressInRange)
-            {
-                return returnValue;
-            } else
-            {
-                this._adressInRange = _adressInRange;
-                DoCrash();
-                return 0;
-            }
+            //int returnValue =  _ProgramMemory.ReadMemByte(Adress); //, out _adressInRange
+            //if (_adressInRange)
+            //{
+            //return returnValue;
+            //} else
+            //{
+            //    this._adressInRange = _adressInRange;
+            //    DoCrash();
+            //    return 0;
+            //}
+
+            return _ProgramMemory.ReadMemByte(Adress);
         }
         public int[] ReadMemory(int Address, int Length)
         {

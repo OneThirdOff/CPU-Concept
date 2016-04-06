@@ -38,8 +38,9 @@ namespace CPU_Concept
                     break;
                 }
                 systemCPU.WriteMemory(i, (byte)0);
-                systemCPU.WriteMemory(0, (byte)10); //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
+                 //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
             }
+            systemCPU.WriteMemory(0, (byte)10);
         }
 
         public void DoCPUFault(int FaultAddress)

@@ -30,3 +30,5 @@ SHR [Register number] [number of shifts] - Bitwise-shifts the register by a numb
 WAIT - for now does nothing.
 
 HALT - Halts the cpu, and ends the program. (for now needed to exit)
+
+RUN - run the program
