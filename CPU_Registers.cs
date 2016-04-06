@@ -1,22 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CPU_Concept
 {
     class CPU_Registers
     {
-        private int _register;
-        public int ReadRegister() { return _register; }
+        private byte[] _register;
+        public int ReadRegister()
+        {
+            try
+            {
+                return BitConverter.ToInt32(_register, 0);
+            } catch (Exception)
+            {
+                return 0;
+            }
+            
+        }
         public void WriteRegister(int DataToWrite)
         {
-            _register = DataToWrite;
+            _register = BitConverter.GetBytes(DataToWrite);
         }
         public int MaxValue;
         public CPU_Registers(int BusWidth)
         {
+            _register = new byte[BusWidth / 8];
             this.MaxValue = Byte.MaxValue * (BusWidth / 8);
         }
     }

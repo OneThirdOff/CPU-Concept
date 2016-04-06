@@ -48,22 +48,23 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>A26E426C4E92C7096A55EDE64574EA9601A80BCC</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>71B95E84A827E8325ABFB1EE5E22DD51C18526E3</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>CPU-Concept_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>CPU-Concept_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <GenerateManifests>true</GenerateManifests>
+    <GenerateManifests>false</GenerateManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
     <TargetZone>LocalIntranet</TargetZone>
   </PropertyGroup>
+  <PropertyGroup />
   <PropertyGroup>
-    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -86,6 +87,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="ClassDiagram1.cd" />
+    <None Include="CPU-Concept_1_TemporaryKey.pfx" />
     <None Include="CPU-Concept_TemporaryKey.pfx" />
     <None Include="Properties\app.manifest" />
   </ItemGroup>

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CPU_Concept
 {
@@ -15,7 +11,6 @@ namespace CPU_Concept
 
         string _biosInput;
         string[] _splitBiosInput;
-        string systemVersion;
 
         public bool InBios { get { return _inInterpreter; } }
         public byte[] ProgramToRun { get { return _programToRun; } }
@@ -26,14 +21,10 @@ namespace CPU_Concept
         public BIOS()
         {
             version = Assembly.GetEntryAssembly().GetName().Version;
-            systemCPU = new CPU(8);
+            systemCPU = new CPU(8, 2);
             systemCPU.Initialize();
             _inInterpreter = true;
             checkCPU();
-
-            //systemVersion = ((AssemblyVersionAttribute)Attribute.GetCustomAttribute( 
-            //    Assembly.GetExecutingAssembly(), typeof(AssemblyVersionAttribute), false))
-            //   .Version;
         }
 
         private void checkCPU()
@@ -64,11 +55,6 @@ namespace CPU_Concept
             Console.WriteLine("BIOS " + version + " Loaded. \r\n Program 1 operation per line, prefix with linenumber to correct line.");
             DoRunInterpreter();
 
-            //Write the program to memory.
-            //for (int i = 0; i < ProgramToRun.Count(); i++)
-            //{
-            //    systemCPU.WriteMemory(i, ProgramToRun[i]);
-            //}
             while (!systemCPU.Halt)
             {
                 systemCPU.Update();
@@ -79,12 +65,12 @@ namespace CPU_Concept
             {
                 Console.WriteLine("Dumping CPU registers.");
                 Console.Write("Porgram counter: " + systemCPU.HaltRegisters[0] + "\t");
-                Console.Write("Instruction: " + systemCPU.HaltRegisters[1] + "\r\n");
+                Console.Write("Instruction: " + systemCPU.HaltRegisters[1] +"\r\n");
                 //Console.Write("Counter: " + systemCPU.HaltRegisters[X] + "\t");
-                Console.Write("Register 0: " + systemCPU.HaltRegisters[2] + "\t");
-                Console.Write("Register 1: " + systemCPU.HaltRegisters[3] + "\t");
-                Console.Write("Temporary register: " + systemCPU.HaltRegisters[4] + "\t");
-                Console.Write("Overflow: " + systemCPU.HaltRegisters[5] + "\t");
+                Console.Write("Register 0: " + systemCPU.HaltRegisters[2] + "dec" + "\t");
+                Console.Write("Register 1: " + systemCPU.HaltRegisters[3] + "dec" + "\t");
+                Console.Write("Temporary register: " + systemCPU.HaltRegisters[4] + "\r\n");
+                Console.Write("Overflow: " + systemCPU.HaltRegisters[5] + "\t\t");
                 Console.Write("Underflow: " + systemCPU.HaltRegisters[6] + "\r\n");
                 Console.WriteLine("Dumping memory:");
                 for (int i = 1; i < systemCPU.MemorySize + 1; i++)
@@ -160,7 +146,7 @@ namespace CPU_Concept
                             systemCPU.WriteMemory(programAdress, 7);
                             programAdress++;
                             break;
-                        case "SUBTRACT":
+                        case "SUB":
                             systemCPU.WriteMemory(programAdress, 8);
                             programAdress++;
                             break;
@@ -168,8 +154,28 @@ namespace CPU_Concept
                             systemCPU.WriteMemory(programAdress, 9);
                             programAdress++;
                             break;
-                        case "HALT":
+                        case "DIV":
                             systemCPU.WriteMemory(programAdress, 10);
+                            programAdress++;
+                            break;
+                        case "SHL":
+                            systemCPU.WriteMemory(programAdress, 11);
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                            programAdress++;
+                            break;
+                        case "SHR":
+                            systemCPU.WriteMemory(programAdress, 12);
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                            programAdress++;
+                            break;
+                        case "HALT":
+                            systemCPU.WriteMemory(programAdress, 255);
                             programAdress++;
                             break;
                         case "WAIT":

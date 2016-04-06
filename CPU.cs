@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CPU_Concept
 {
     class CPU
     {
-        private CPU_Registers _register0;
-        private CPU_Registers _register1;
+        private List<CPU_Registers> _registers;
+        //private CPU_Registers _registers[0];
+        //private CPU_Registers _registers[1];
         private CPU_Registers _tempRegister;
         private CPU_Registers _instructionRegister;
         private int _programCounter;
@@ -62,10 +60,14 @@ namespace CPU_Concept
             READ0,
             READ1,
             ADD,
-            MUX,
             SUB,
-            HALT,
-            WAIT
+            MUX,
+            DIV,
+            SHL,
+            SHR,
+            WAIT,
+            HALT = 255
+            
         }
 
         #region CPU Operations
@@ -83,8 +85,8 @@ namespace CPU_Concept
         {
             _haltRegisters[0] = Convert.ToString(_programCounter);
             _haltRegisters[1] = Convert.ToString(_instructionRegister.ReadRegister());
-            _haltRegisters[2] = Convert.ToString(_register0.ReadRegister());
-            _haltRegisters[3] = Convert.ToString(_register1.ReadRegister());
+            _haltRegisters[2] = Convert.ToString(_registers[0].ReadRegister());
+            _haltRegisters[3] = Convert.ToString(_registers[1].ReadRegister());
             _haltRegisters[4] = Convert.ToString(_tempRegister.ReadRegister());
             _haltRegisters[5] = Convert.ToString(_overFlow);
             _haltRegisters[6] = Convert.ToString(_underFlow);
@@ -95,71 +97,75 @@ namespace CPU_Concept
         }
         private void DoLoad0()
         {
-            _register0.WriteRegister(_ProgramMemory.ReadMemByte(_programCounter));
+            _registers[0].WriteRegister(_ProgramMemory.ReadMemByte(_programCounter));
             _programCounter++;
         }
         private void DoLoad1()
         {
-            _register1.WriteRegister(_ProgramMemory.ReadMemByte(_programCounter));
+            _registers[1].WriteRegister(_ProgramMemory.ReadMemByte(_programCounter));
             _programCounter++;
         }
         private void DoSave0()
         {
             if (_tempRegister.ReadRegister() < 0)
             {
-                _register0.WriteRegister(0);
+                _registers[0].WriteRegister(0);
                 _underFlow = true;
                 DoCrash();
             }
-            else if (_tempRegister.ReadRegister() > _register1.MaxValue)
+            else if (_tempRegister.ReadRegister() > _registers[1].MaxValue)
             {
-                _register0.WriteRegister(255);
+                _registers[0].WriteRegister(255);
                 _overFlow = true;
                 DoCrash();
             }
             else
             {
-                _register0.WriteRegister((byte)_tempRegister.ReadRegister());
+                _registers[0].WriteRegister((byte)_tempRegister.ReadRegister());
             }
         }
         private void DoSave1()
         {
             if (_tempRegister.ReadRegister() < 0)
             {
-                _register1.WriteRegister(0);
+                _registers[1].WriteRegister(0);
                 _underFlow = true;
                 DoCrash();
-            } else if (_tempRegister.ReadRegister() > _register1.MaxValue)
+            } else if (_tempRegister.ReadRegister() > _registers[1].MaxValue)
             {
-                _register1.WriteRegister(255);
+                _registers[1].WriteRegister(255);
                 _overFlow = true;
                 DoCrash();
             } else 
             {
-                _register1.WriteRegister((byte)_tempRegister.ReadRegister());
+                _registers[1].WriteRegister((byte)_tempRegister.ReadRegister());
             }
         }
         private int DoRead0()
         {
-            _tempRegister.WriteRegister(_register0.ReadRegister());
+            _tempRegister.WriteRegister(_registers[0].ReadRegister());
             return _tempRegister.ReadRegister();
         }
         private int DoRead1()
         {
-            _tempRegister.WriteRegister(_register1.ReadRegister());
+            _tempRegister.WriteRegister(_registers[1].ReadRegister());
             return _tempRegister.ReadRegister();
         }
         private void DoAdd()
         {
-            _tempRegister.WriteRegister(_register0.ReadRegister() + _register1.ReadRegister());
+            _tempRegister.WriteRegister(_registers[0].ReadRegister() + _registers[1].ReadRegister());
         }
         private void DoSubtract()
         {
-            _tempRegister.WriteRegister(_register0.ReadRegister() - _register1.ReadRegister());
+            _tempRegister.WriteRegister(_registers[0].ReadRegister() - _registers[1].ReadRegister());
         }
         private void DoMultiply()
         {
-            _tempRegister.WriteRegister(_register0.ReadRegister() * _register1.ReadRegister());
+            _tempRegister.WriteRegister(_registers[0].ReadRegister() * _registers[1].ReadRegister());
+        }
+        private void DoDivision()
+        {
+            _tempRegister.WriteRegister(_registers[0].ReadRegister() / _registers[1].ReadRegister());
         }
         private void DoHalt()
         {
@@ -170,13 +176,26 @@ namespace CPU_Concept
         {
             //Need Wait-state/Interrupt code
         }
+        private void DoShiftLeft()
+        {
+            _registers[_ProgramMemory.ReadMemByte(_programCounter)].WriteRegister(_registers[_ProgramMemory.ReadMemByte(_programCounter)].ReadRegister() << _ProgramMemory.ReadMemByte(_programCounter + 1));
+        }
+        private void DoShiftRight()
+        {
+            _registers[_ProgramMemory.ReadMemByte(_programCounter)].WriteRegister(_registers[_ProgramMemory.ReadMemByte(_programCounter)].ReadRegister() >> _ProgramMemory.ReadMemByte(_programCounter + 1));
+        }
         #endregion
 
 
-        public CPU(int BusWidth)
+        public CPU(int BusWidth, int NumberOfRegisters)
         {
-            this._register0 = new CPU_Registers(BusWidth);
-            this._register1 = new CPU_Registers(BusWidth);
+            _registers = new List<CPU_Registers>();
+            for (int i = 0; i < NumberOfRegisters; i++)
+            {
+                _registers.Add(new CPU_Registers(BusWidth));
+            }
+            //this._registers[0] = new CPU_Registers(BusWidth);
+            //this._registers[1] = new CPU_Registers(BusWidth);
             this._tempRegister = new CPU_Registers(BusWidth * 2);
             this._instructionRegister = new CPU_Registers(BusWidth);
             this._ProgramMemory = new Memory(256);
@@ -235,6 +254,15 @@ namespace CPU_Concept
                     break;
                 case InstructionSet.MUX:
                     DoMultiply();
+                    break;
+                case InstructionSet.DIV:
+                    DoDivision();
+                    break;
+                case InstructionSet.SHL:
+                    DoShiftLeft();
+                    break;
+                case InstructionSet.SHR:
+                    DoShiftRight();
                     break;
                 case InstructionSet.HALT:
                     DoHalt();
