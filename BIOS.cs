@@ -53,7 +53,8 @@ namespace CPU_Concept
 
         public void RunBios()
         {
-            Console.WriteLine("BIOS " + version + " Loaded. \r\n Program 1 operation per line, prefix with linenumber to correct line.");
+            Console.WriteLine("BIOS " + version + " Loaded.");
+            DoCreateCPU();
             DoRunInterpreter();
 
             while (!systemCPU.Halt)
@@ -96,9 +97,13 @@ namespace CPU_Concept
             }
         }
 
+        public void DoCreateCPU()
+        { }
+
         public void DoRunInterpreter()
         {
-            int programAdress = 0;
+            Console.WriteLine("Program 1 operation per line, prefix with linenumber to correct line.");
+            int programAdress = 1;
             while (InBios)
             {
                 Console.Write(programAdress + ": ");
@@ -188,6 +193,7 @@ namespace CPU_Concept
 
                 }
             }
+            systemCPU.WriteMemory(0, (byte)programAdress);
         }
 
         public void DoExitBios()

@@ -6,44 +6,15 @@ namespace CPU_Concept
     {
         private int[] _memory;
         private int _memorySize;
-        //private int _adress;
-        //private bool _adressInRange;
 
         public int MemorySize { get { return _memorySize; } }
-        public void WriteMemByte(int Adress, byte ByteToWrite)//, out bool _adressInRange
+        public void WriteMemByte(int Adress, byte ByteToWrite)
         {
-            //this._adress = Adress;
-            //_adressInRange = true;
-            //if (this._adress > this.MemorySize)
-            //{
-            //    _adressInRange = false;
-            //}
-
-            //if(!_adressInRange)
-            //{
-            //}
             _memory[Adress] = ByteToWrite;
         }
-        public int ReadMemByte(int Adress)//, out bool _adressInRange
+        public int ReadMemByte(int Adress)
         {
-
-            //this._adress = Adress;
-            //bool _adressInRange = true;
-            //if (this._adress > this.MemorySize)
-            //{
-            //    _adressInRange = false;
-            //}
-
-            //if(_adressInRange)
-            //{
-
-            //}
-            //else
-            //{
-            //    return 0;
-            //}
             return _memory[Adress];
-
         }
         public int[] ReadMemSequence(int Adress, int Length)
         {
@@ -66,8 +37,6 @@ namespace CPU_Concept
 
         public Memory(int MemorySize)
         {
-            //this._adress = 0;
-            //this._adressInRange = false;
             this._memorySize = MemorySize;
             _memory = new int[MemorySize];
         }

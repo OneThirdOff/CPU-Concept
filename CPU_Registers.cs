@@ -5,6 +5,7 @@ namespace CPU_Concept
     class CPU_Registers
     {
         private byte[] _register;
+        private bool _isCounter;
         public int ReadRegister()
         {
             try
@@ -21,8 +22,25 @@ namespace CPU_Concept
             _register = BitConverter.GetBytes(DataToWrite);
         }
         public int MaxValue;
-        public CPU_Registers(int BusWidth)
+        public void IncrementCounter()
         {
+            if (ReadRegister() < MaxValue && _isCounter)
+            {
+                WriteRegister(ReadRegister() + 1);
+            }
+        }
+        public void DecrementCounter()
+        {
+            if (ReadRegister() > 0 && _isCounter)
+            {
+                WriteRegister(ReadRegister() - 1);
+            }
+            
+        }
+
+        public CPU_Registers(int BusWidth, bool IsCounter)
+        {
+            this._isCounter = IsCounter;
             _register = new byte[BusWidth / 8];
             this.MaxValue = Byte.MaxValue * (BusWidth / 8);
         }

@@ -9,44 +9,32 @@ namespace CPU_Concept
         private CPU_Registers _tempRegister;
         private CPU_Registers _adressRegister;
         private CPU_Registers _instructionRegister;
+        private CPU_Registers _counter;
         private int _programCounter;
+        private int _programLength;
         private Memory _ProgramMemory;
         private string[] _haltRegisters;
         private bool _adressInRange;
-
+        
         private bool _overFlow;
         private bool _underFlow;
         private bool _halt;
         private bool _fault;
         
+        public int Counter { get { return _counter.ReadRegister(); } }
         public int Adress { get { return _adressRegister.ReadRegister(); } }
-        public bool IndexOutOfRange { get { return this._adressInRange; } }
+        public bool IndexOutOfRange { get { return !this._adressInRange; } }
         public bool Overflow { get { return this._overFlow; } }
         public bool Underflow { get { return this._underFlow; } }
         public bool Halt { get { return this._halt; } }
         public string[] HaltRegisters { get { return _haltRegisters; } }
+
         public void WriteMemory(int Adress, byte ByteToWrite)
         {
-            _ProgramMemory.WriteMemByte(Adress, ByteToWrite); //, out _adressInRange
-            //if (!_adressInRange)
-            //{
-            //    this._adressInRange = _adressInRange;
-            //    DoCrash();
-            //}
+            _ProgramMemory.WriteMemByte(Adress, ByteToWrite);
         }
         public int ReadMemory(int Adress)
         {
-            //int returnValue =  _ProgramMemory.ReadMemByte(Adress); //, out _adressInRange
-            //if (_adressInRange)
-            //{
-            //return returnValue;
-            //} else
-            //{
-            //    this._adressInRange = _adressInRange;
-            //    DoCrash();
-            //    return 0;
-            //}
-
             return _ProgramMemory.ReadMemByte(Adress);
         }
         public int[] ReadMemory(int Address, int Length)
@@ -151,7 +139,16 @@ namespace CPU_Concept
         }
         private void DoMultiply()
         {
-            _tempRegister.WriteRegister(_registers[0].ReadRegister() * _registers[1].ReadRegister());
+            _counter.WriteRegister((byte)_registers[1].ReadRegister());
+            _registers[1].WriteRegister(0);
+            DoAdd();
+            _counter.DecrementCounter();
+            while(_counter.ReadRegister() > 0)
+            {
+                _registers[1].WriteRegister(_tempRegister.ReadRegister());
+                DoAdd();
+                _counter.DecrementCounter();
+            }
         }
         private void DoDivision()
         {
@@ -181,14 +178,15 @@ namespace CPU_Concept
 
         public CPU(int BusWidth, int AddressBusWidth, int NumberOfRegisters)
         {
-            _adressRegister = new CPU_Registers(AddressBusWidth);
+            _counter = new CPU_Registers(AddressBusWidth, true);
+            _adressRegister = new CPU_Registers(AddressBusWidth, false);
             _registers = new List<CPU_Registers>();
             for (int i = 0; i < NumberOfRegisters; i++)
             {
-                _registers.Add(new CPU_Registers(BusWidth));
+                _registers.Add(new CPU_Registers(BusWidth, false));
             }
-            this._tempRegister = new CPU_Registers(BusWidth * 2);
-            this._instructionRegister = new CPU_Registers(BusWidth);
+            this._tempRegister = new CPU_Registers(BusWidth * 2, false);
+            this._instructionRegister = new CPU_Registers(BusWidth, false);
             this._ProgramMemory = new Memory(256);
             this._haltRegisters = new string[8];
         }
@@ -198,7 +196,15 @@ namespace CPU_Concept
             this._overFlow = false;
             this._underFlow = false;
             this._halt = false;
-            this._programCounter = 0;
+            this._programCounter = 1;
+            this._programLength = _ProgramMemory.ReadMemByte(0);
+        }
+
+        public bool CheckAdressRange(int Adress)
+        {
+            bool isAdressInRange = true;
+
+            return isAdressInRange;
         }
 
         public void Reset()
