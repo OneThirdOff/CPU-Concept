@@ -15,6 +15,8 @@ namespace CPU_Concept
         private Memory _ProgramMemory;
         private string[] _haltRegisters;
         private bool _adressInRange;
+        private int _graphicsMemory;
+        private int _programMemorySize;
         
         private bool _overFlow;
         private bool _underFlow;
@@ -48,6 +50,7 @@ namespace CPU_Concept
             return returnBytes;
         }
         public int MemorySize { get { return _ProgramMemory.MemorySize; } }
+        public int ProgramMemorySize { get { return _programMemorySize; } }
         
         public void SetFault()
         {
@@ -97,10 +100,9 @@ namespace CPU_Concept
         private void DoNoP()
         {
         }
-        private void DoLoad()
+        private void DoLoad(int address)
         {
-            _registers[_ProgramMemory.ReadMemByte(_programCounter)].WriteRegister(_ProgramMemory.ReadMemByte(_programCounter + 1));
-            _programCounter+=2;
+            _registers[_ProgramMemory.ReadMemByte(_programCounter)].WriteRegister(_ProgramMemory.ReadMemByte(address));
         }
         private void DoSave()
         {
@@ -122,11 +124,10 @@ namespace CPU_Concept
                 _programCounter++;
             }
         }
-        private int DoRead()
+        private void DoRead()
         {
             _tempRegister.WriteRegister(_registers[_ProgramMemory.ReadMemByte(_programCounter)].ReadRegister());
             _programCounter++;
-            return _tempRegister.ReadRegister();
         }
         private void DoAdd()
         {
@@ -176,6 +177,9 @@ namespace CPU_Concept
         
         public CPU(int BusWidth, int AddressBusWidth, int NumberOfRegisters)
         {
+            this._ProgramMemory = new Memory(2256);
+            _graphicsMemory = 2000;
+            _programMemorySize = this._ProgramMemory.MemorySize - _graphicsMemory;
             _counter = new CPU_Registers(AddressBusWidth, true);
             _adressRegister = new CPU_Registers(AddressBusWidth, false);
             _registers = new List<CPU_Registers>();
@@ -185,7 +189,6 @@ namespace CPU_Concept
             }
             this._tempRegister = new CPU_Registers(BusWidth * 2, false);
             this._instructionRegister = new CPU_Registers(BusWidth, false);
-            this._ProgramMemory = new Memory(2256);
             this._haltRegisters = new string[8];
         }
 
@@ -224,7 +227,10 @@ namespace CPU_Concept
                     DoNoP();
                     break;
                 case InstructionSet.LOAD:
-                    DoLoad();
+                    _adressRegister.WriteRegister(_programCounter);
+                    _programCounter++;
+                    DoLoad(_adressRegister.ReadRegister());
+                    _programCounter++;
                     break;
                 case InstructionSet.SAVE:
                     DoSave();
@@ -260,6 +266,12 @@ namespace CPU_Concept
                     DoUnknownOp();
                     break;
             }
+        }
+        public void Draw()
+        {
+            //string screen = BitConverter.ToString(_ProgramMemory.ReadMemSequence(100, 2000));
+            //Console.SetCursorPosition(0, 0);
+            //Console.WriteLine(screen);
         }
     }
 }

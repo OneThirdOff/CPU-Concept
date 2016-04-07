@@ -38,9 +38,11 @@ namespace CPU_Concept
                     break;
                 }
                 systemCPU.WriteMemory(i, (byte)0);
-                 //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
+                 
             }
-            systemCPU.WriteMemory(0, (byte)10);
+            //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
+            systemCPU.WriteMemory(0, (byte)255);
+            systemCPU.WriteMemory(0x100, (byte)255);
         }
 
         public void DoCPUFault(int FaultAddress)
@@ -60,6 +62,7 @@ namespace CPU_Concept
             while (!systemCPU.Halt)
             {
                 systemCPU.Update();
+                systemCPU.Draw();
             }
             Console.WriteLine("Dump registers? y/n ");
             string getResponse = Console.ReadLine();
@@ -77,14 +80,10 @@ namespace CPU_Concept
                 Console.Write("Overflow: " + systemCPU.HaltRegisters[5] + "\t\t");
                 Console.Write("Underflow: " + systemCPU.HaltRegisters[6] + "\r\n");
                 Console.WriteLine("Dumping memory:");
-                for (int i = 1; i < systemCPU.MemorySize ; i++)
+                for (int i = 1; i < systemCPU.ProgramMemorySize ; i++)
                 {
                     Console.Write(systemCPU.ReadMemory(i - 1).ToString("x2"));
                     if (i % 30 == 0)
-                    {
-                        Console.Write("\r\n");
-                    }
-                    else if (i == systemCPU.MemorySize)
                     {
                         Console.Write("\r\n");
                     }
@@ -93,7 +92,7 @@ namespace CPU_Concept
                         Console.Write(":");
                     }
                 }
-                Console.WriteLine("System halted.");
+                Console.WriteLine("\r\nSystem halted.");
             }
         }
 

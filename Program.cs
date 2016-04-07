@@ -6,6 +6,7 @@ namespace CPU_Concept
     {
         static void Main(string[] args)
         {
+            Console.SetBufferSize(80, 25);
             BIOS systemBios = new BIOS();
             if (!systemBios.CPUFault)
             {

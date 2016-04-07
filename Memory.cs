@@ -16,12 +16,12 @@ namespace CPU_Concept
         {
             return _memory[Adress];
         }
-        public int[] ReadMemSequence(int Adress, int Length)
+        public byte[] ReadMemSequence(int Adress, int Length)
         {
-            int[] returnSequence = new int[Length];
+            byte[] returnSequence = new byte[Length];
             for (int i = 0; i < Length; i++)
             {
-                returnSequence[i] = _memory[Adress];
+                returnSequence[i] = (byte)_memory[Adress];
                 Adress++;
             }
             return returnSequence;
