@@ -70,7 +70,6 @@ namespace CPU_Concept
             SHR,
             WAIT,
             HALT = 255
-            
         }
 
         #region CPU Operations
@@ -174,8 +173,7 @@ namespace CPU_Concept
             _programCounter += 2;
         }
         #endregion
-
-
+        
         public CPU(int BusWidth, int AddressBusWidth, int NumberOfRegisters)
         {
             _counter = new CPU_Registers(AddressBusWidth, true);
@@ -187,7 +185,7 @@ namespace CPU_Concept
             }
             this._tempRegister = new CPU_Registers(BusWidth * 2, false);
             this._instructionRegister = new CPU_Registers(BusWidth, false);
-            this._ProgramMemory = new Memory(256);
+            this._ProgramMemory = new Memory(2256);
             this._haltRegisters = new string[8];
         }
 

@@ -77,7 +77,7 @@ namespace CPU_Concept
                 Console.Write("Overflow: " + systemCPU.HaltRegisters[5] + "\t\t");
                 Console.Write("Underflow: " + systemCPU.HaltRegisters[6] + "\r\n");
                 Console.WriteLine("Dumping memory:");
-                for (int i = 1; i < systemCPU.MemorySize + 1; i++)
+                for (int i = 1; i < systemCPU.MemorySize ; i++)
                 {
                     Console.Write(systemCPU.ReadMemory(i - 1).ToString("x2"));
                     if (i % 30 == 0)
