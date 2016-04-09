@@ -30,13 +30,15 @@ namespace CPU_Concept
                 WriteRegister(ReadRegister() + 1);
             }
         }
-        public void DecrementCounter()
+        public bool DecrementCounter()
         {
+            bool isNegative = false;
+            if(ReadRegister() == 0) isNegative = true;
             if (ReadRegister() > 0 && _isCounter)
             {
                 WriteRegister(ReadRegister() - 1);
             }
-            
+            return isNegative;
         }
 
         public CPU_Registers(int BusWidth, bool IsCounter)

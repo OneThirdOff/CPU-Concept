@@ -192,9 +192,15 @@ namespace CPU_Concept
         private void DoMultiply()
         {
             _counter.WriteRegister((byte)_registers[1].ReadRegister());
-            _registers[1].WriteRegister(0);
-            DoAdd();
-            _counter.DecrementCounter();
+            _tempRegister.WriteRegister(_registers[1].ReadRegister());
+            if (!_counter.DecrementCounter())
+            {
+                _tempRegister.WriteRegister(0);
+            }
+            else
+            {
+                _counter.DecrementCounter();
+            }
             while(_counter.ReadRegister() > 0)
             {
                 _registers[1].WriteRegister(_tempRegister.ReadRegister());
@@ -283,11 +289,36 @@ namespace CPU_Concept
                     break;
             }
         }
+
+        public void GraphicsTest()
+        {
+            int address = 256;
+            byte[] byteToWrite = { 84, 101, 115, 116, 32 };
+            int bytecounter = 0;
+            Console.SetCursorPosition(0, 0);
+            for (int i = 0; i < _graphicsMemory; i ++)
+            {
+                _ProgramMemory.WriteMemByte(address, byteToWrite[bytecounter]);
+                if (bytecounter == 4)
+                {
+                    bytecounter = 0;
+                } else
+                {
+                    bytecounter++;
+                }
+                address++;
+            }
+        }
+
         public void Draw()
         {
-            //string screen = BitConverter.ToString(_ProgramMemory.ReadMemSequence(100, 2000));
-            //Console.SetCursorPosition(0, 0);
-            //Console.WriteLine(screen);
+            
+            byte[] screenMem = _ProgramMemory.ReadMemSequence(100, 2000);
+            Console.SetCursorPosition(0, 0);
+            foreach (int ByteToWrite in screenMem)
+            {
+                Console.Write(Convert.ToChar(ByteToWrite));
+            }
         }
         #endregion
     }
