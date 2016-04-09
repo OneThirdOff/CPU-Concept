@@ -6,6 +6,8 @@ namespace CPU_Concept
     {
         private byte[] _register;
         private bool _isCounter;
+
+        public int MaxValue;
         public int ReadRegister()
         {
             try
@@ -21,7 +23,6 @@ namespace CPU_Concept
         {
             _register = BitConverter.GetBytes(DataToWrite);
         }
-        public int MaxValue;
         public void IncrementCounter()
         {
             if (ReadRegister() < MaxValue && _isCounter)

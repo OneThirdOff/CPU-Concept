@@ -4,7 +4,7 @@ namespace CPU_Concept
 {
     class Memory
     {
-        private int[] _memory;
+        private byte[] _memory;
         private int _memorySize;
 
         public int MemorySize { get { return _memorySize; } }
@@ -16,6 +16,7 @@ namespace CPU_Concept
         {
             return _memory[Adress];
         }
+
         public byte[] ReadMemSequence(int Adress, int Length)
         {
             byte[] returnSequence = new byte[Length];
@@ -38,7 +39,7 @@ namespace CPU_Concept
         public Memory(int MemorySize)
         {
             this._memorySize = MemorySize;
-            _memory = new int[MemorySize];
+            _memory = new byte[MemorySize];
         }
     }
 }

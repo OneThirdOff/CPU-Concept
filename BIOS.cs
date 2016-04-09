@@ -37,12 +37,10 @@ namespace CPU_Concept
                     DoCPUFault(i);
                     break;
                 }
-                systemCPU.WriteMemory(i, (byte)0);
+                systemCPU.WriteMemory(i, 0);
                  
             }
-            //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
-            systemCPU.WriteMemory(0, (byte)255);
-            systemCPU.WriteMemory(0x100, (byte)255);
+            systemCPU.WriteMemory(0, 255); //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
         }
 
         public void DoCPUFault(int FaultAddress)
@@ -56,48 +54,25 @@ namespace CPU_Concept
         public void RunBios()
         {
             Console.WriteLine("BIOS " + version + " Loaded.");
-            DoCreateCPU();
             DoRunInterpreter();
 
             while (!systemCPU.Halt)
             {
                 systemCPU.Update();
                 systemCPU.Draw();
+                if (systemCPU.Reset)
+                {
+                    RunBios();
+                }
             }
             Console.WriteLine("Dump registers? y/n ");
             string getResponse = Console.ReadLine();
             if (getResponse.ToUpper().Equals("Y") || getResponse.Equals(""))
             {
-                Console.WriteLine("Dumping CPU registers.");
-                Console.Write("Program counter: " + systemCPU.HaltRegisters[0] + "\t");
-                Console.Write("Instruction: " + systemCPU.HaltRegisters[1] + "\r\n");
-                Console.Write("Adress: " + systemCPU.Adress + "\t");
-                Console.Write("Adress in range: " + systemCPU.IndexOutOfRange + "\r\n");
-                //Console.Write("Counter: " + systemCPU.HaltRegisters[X] + "\t");
-                Console.Write("Register 0: " + systemCPU.HaltRegisters[2] + "dec" + "\t");
-                Console.Write("Register 1: " + systemCPU.HaltRegisters[3] + "dec" + "\t");
-                Console.Write("Temporary register: " + systemCPU.HaltRegisters[4] + "\r\n");
-                Console.Write("Overflow: " + systemCPU.HaltRegisters[5] + "\t\t");
-                Console.Write("Underflow: " + systemCPU.HaltRegisters[6] + "\r\n");
-                Console.WriteLine("Dumping memory:");
-                for (int i = 1; i < systemCPU.ProgramMemorySize ; i++)
-                {
-                    Console.Write(systemCPU.ReadMemory(i - 1).ToString("x2"));
-                    if (i % 30 == 0)
-                    {
-                        Console.Write("\r\n");
-                    }
-                    else if(i % 2 == 0)
-                    {
-                        Console.Write(":");
-                    }
-                }
-                Console.WriteLine("\r\nSystem halted.");
+                DoDumpRegisters();
             }
+            Console.WriteLine("\r\nSystem halted.");
         }
-
-        public void DoCreateCPU()
-        { }
 
         public void DoRunInterpreter()
         {
@@ -180,7 +155,8 @@ namespace CPU_Concept
                             programAdress++;
                             break;
                         case "RST":
-                            systemCPU.Reset();
+                            systemCPU.WriteMemory(programAdress, 250);
+                            programAdress++;
                             break;
                         default:
                             Console.WriteLine("Unknown command.");
@@ -193,6 +169,34 @@ namespace CPU_Concept
                 }
             }
             systemCPU.WriteMemory(0, (byte)programAdress);
+        }
+
+        public void DoDumpRegisters()
+        {
+            Console.WriteLine("Dumping CPU registers.");
+            Console.Write("Program counter: " + systemCPU.HaltRegisters[0] + "\t");
+            Console.Write("Instruction: " + systemCPU.HaltRegisters[1] + "\r\n");
+            Console.Write("Adress: " + systemCPU.Adress + "\t");
+            Console.Write("Adress in range: " + systemCPU.IndexOutOfRange + "\r\n");
+            Console.Write("Counter: " + systemCPU.HaltRegisters[7] + "\t");
+            Console.Write("Register 0: " + systemCPU.HaltRegisters[2] + "dec" + "\t");
+            Console.Write("Register 1: " + systemCPU.HaltRegisters[3] + "dec" + "\t");
+            Console.Write("Temporary register: " + systemCPU.HaltRegisters[4] + "\r\n");
+            Console.Write("Overflow: " + systemCPU.HaltRegisters[5] + "\t\t");
+            Console.Write("Underflow: " + systemCPU.HaltRegisters[6] + "\r\n");
+            Console.WriteLine("Dumping memory:");
+            for (int i = 1; i < systemCPU.ProgramMemorySize; i++)
+            {
+                Console.Write(systemCPU.ReadMemory(i - 1).ToString("x2"));
+                if (i % 30 == 0)
+                {
+                    Console.Write("\r\n");
+                }
+                else if (i % 2 == 0)
+                {
+                    Console.Write(":");
+                }
+            }
         }
 
         public void DoExitBios()

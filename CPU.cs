@@ -5,6 +5,7 @@ namespace CPU_Concept
 {
     class CPU
     {
+        #region private stuff
         private List<CPU_Registers> _registers;
         private CPU_Registers _tempRegister;
         private CPU_Registers _adressRegister;
@@ -14,21 +15,21 @@ namespace CPU_Concept
         private int _programLength;
         private Memory _ProgramMemory;
         private string[] _haltRegisters;
-        private bool _adressInRange;
         private int _graphicsMemory;
         private int _programMemorySize;
         
+        //Flags
         private bool _overFlow;
         private bool _underFlow;
+        private bool _adressInRange;
         private bool _halt;
         private bool _fault;
-        
+        private bool _reset;
+        #endregion
+
+        #region public stuff
         public int Counter { get { return _counter.ReadRegister(); } }
         public int Adress { get { return _adressRegister.ReadRegister(); } }
-        public bool IndexOutOfRange { get { return !this._adressInRange; } }
-        public bool Overflow { get { return this._overFlow; } }
-        public bool Underflow { get { return this._underFlow; } }
-        public bool Halt { get { return this._halt; } }
         public string[] HaltRegisters { get { return _haltRegisters; } }
 
         public void WriteMemory(int Adress, byte ByteToWrite)
@@ -51,7 +52,15 @@ namespace CPU_Concept
         }
         public int MemorySize { get { return _ProgramMemory.MemorySize; } }
         public int ProgramMemorySize { get { return _programMemorySize; } }
-        
+
+        //Flags
+        public bool Overflow { get { return this._overFlow; } }
+        public bool Underflow { get { return this._underFlow; } }
+        public bool IndexOutOfRange { get { return !this._adressInRange; } }
+        public bool Halt { get { return this._halt; } }
+        public bool Reset { get { return this._reset; } }
+        #endregion
+
         public void SetFault()
         {
             _fault = true;
@@ -59,6 +68,42 @@ namespace CPU_Concept
         }
         public bool Fault { get { return _fault; } }
 
+        #region create and initialize
+        public CPU(int BusWidth, int AddressBusWidth, int NumberOfRegisters)
+        {
+            this._ProgramMemory = new Memory(2256);
+            _graphicsMemory = 2000;
+            _programMemorySize = this._ProgramMemory.MemorySize - _graphicsMemory;
+            _counter = new CPU_Registers(AddressBusWidth, true);
+            _adressRegister = new CPU_Registers(AddressBusWidth, false);
+            _registers = new List<CPU_Registers>();
+            for (int i = 0; i < NumberOfRegisters; i++)
+            {
+                _registers.Add(new CPU_Registers(BusWidth, false));
+            }
+            this._tempRegister = new CPU_Registers(BusWidth * 2, false);
+            this._instructionRegister = new CPU_Registers(BusWidth, false);
+            this._haltRegisters = new string[8];
+        }
+        public void Initialize()
+        {
+            this._overFlow = false;
+            this._underFlow = false;
+            this._halt = false;
+            this._programCounter = 1;
+            this._programLength = _ProgramMemory.ReadMemByte(0);
+        }
+        public void DoReset()
+        {
+            this._overFlow = false;
+            this._underFlow = false;
+            this._halt = false;
+            this._programCounter = 0;
+            this._reset = false;
+        }
+        #endregion
+
+        #region CPU-functions
         public enum InstructionSet
         {
             NoP,
@@ -72,7 +117,13 @@ namespace CPU_Concept
             SHL,
             SHR,
             WAIT,
+            RST = 250,
             HALT = 255
+        }
+        public bool CheckAdressRange(int Adress)
+        {
+            bool isAdressInRange = true;
+            return isAdressInRange;
         }
 
         #region CPU Operations
@@ -95,6 +146,7 @@ namespace CPU_Concept
             _haltRegisters[4] = Convert.ToString(_tempRegister.ReadRegister());
             _haltRegisters[5] = Convert.ToString(_overFlow);
             _haltRegisters[6] = Convert.ToString(_underFlow);
+            _haltRegisters[7] = Convert.ToString(_counter.ReadRegister());
         }
 
         private void DoNoP()
@@ -174,48 +226,9 @@ namespace CPU_Concept
             _programCounter += 2;
         }
         #endregion
-        
-        public CPU(int BusWidth, int AddressBusWidth, int NumberOfRegisters)
-        {
-            this._ProgramMemory = new Memory(2256);
-            _graphicsMemory = 2000;
-            _programMemorySize = this._ProgramMemory.MemorySize - _graphicsMemory;
-            _counter = new CPU_Registers(AddressBusWidth, true);
-            _adressRegister = new CPU_Registers(AddressBusWidth, false);
-            _registers = new List<CPU_Registers>();
-            for (int i = 0; i < NumberOfRegisters; i++)
-            {
-                _registers.Add(new CPU_Registers(BusWidth, false));
-            }
-            this._tempRegister = new CPU_Registers(BusWidth * 2, false);
-            this._instructionRegister = new CPU_Registers(BusWidth, false);
-            this._haltRegisters = new string[8];
-        }
+        #endregion
 
-        public void Initialize()
-        {
-            this._overFlow = false;
-            this._underFlow = false;
-            this._halt = false;
-            this._programCounter = 1;
-            this._programLength = _ProgramMemory.ReadMemByte(0);
-        }
-
-        public bool CheckAdressRange(int Adress)
-        {
-            bool isAdressInRange = true;
-
-            return isAdressInRange;
-        }
-
-        public void Reset()
-        {
-            this._overFlow = false;
-            this._underFlow = false;
-            this._halt = false;
-            this._programCounter = 0;
-        }
-
+        #region program-functions
         public void Update()
         {
             _instructionRegister.WriteRegister(_ProgramMemory.ReadMemByte(_programCounter));
@@ -262,6 +275,9 @@ namespace CPU_Concept
                 case InstructionSet.WAIT:
                     DoWait();
                     break;
+                case InstructionSet.RST:
+                    DoReset();
+                    break;
                 default:
                     DoUnknownOp();
                     break;
@@ -273,5 +289,6 @@ namespace CPU_Concept
             //Console.SetCursorPosition(0, 0);
             //Console.WriteLine(screen);
         }
+        #endregion
     }
 }
