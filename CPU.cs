@@ -166,6 +166,8 @@ namespace CPU_Concept
             CIN = 14,
             LOAD = 15,
             STORE = 16,
+            JMP = 17,
+            JZ = 18,
             RST = 250,  //Not required.
             HALT = 255
         }
@@ -390,7 +392,7 @@ namespace CPU_Concept
         /// Sets the programcounter to the new adress.
         /// </summary>
         /// <param name="AdressToJumpTo"></param>
-        private void JMP(int AdressToJumpTo)
+        private void DoJump(int AdressToJumpTo)
         {
             _programCounter.WriteRegister(AdressToJumpTo);
         }
@@ -398,7 +400,7 @@ namespace CPU_Concept
         /// Sets the programcounter to the new adress if the required parameter is zero
         /// </summary>
         /// <param name="AdressToJumpTo"></param>
-        private void JZ(int AdressToJumpTo)
+        private void JumpIfZero(int AdressToJumpTo)
         {
 
         }
@@ -505,6 +507,12 @@ namespace CPU_Concept
                     _adressRegister.WriteRegister(_programCounter.ReadRegister() + 1);
                     DoStore(_ProgramMemory.ReadMemByte(_programCounter.ReadRegister()), _adressRegister.ReadRegister());
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
+                    break;
+                case InstructionSet.JMP:
+                    DoJump();
+                    break;
+                case InstructionSet.JZ:
+                    DoJumpIfZero();
                     break;
                 default:
                     DoUnknownOp();
