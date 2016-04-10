@@ -89,6 +89,7 @@
     <None Include="CPU-Concept_1_TemporaryKey.pfx" />
     <None Include="CPU-Concept_TemporaryKey.pfx" />
     <None Include="Properties\app.manifest" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">

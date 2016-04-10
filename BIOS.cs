@@ -96,7 +96,7 @@ namespace CPU_Concept
                             systemCPU.WriteMemory(programAdress, 0);
                             programAdress++;
                             break;
-                        case "LOAD":
+                        case "MOV":
                             systemCPU.WriteMemory(programAdress, 1);
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
@@ -165,6 +165,10 @@ namespace CPU_Concept
                             break;
                         case "CIN":
                             systemCPU.WriteMemory(programAdress, 14);
+                            break;
+                        case "LOAD":
+                            break;
+                        case "STORE":
                             break;
                         case "RST":
                             systemCPU.WriteMemory(programAdress, 250);
