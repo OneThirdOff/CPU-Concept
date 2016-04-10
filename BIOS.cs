@@ -154,6 +154,18 @@ namespace CPU_Concept
                             systemCPU.WriteMemory(programAdress, 255);
                             programAdress++;
                             break;
+                        case "DEC":
+                            systemCPU.WriteMemory(programAdress, 11);
+                            break;
+                        case "INC":
+                            systemCPU.WriteMemory(programAdress, 12);
+                            break;
+                        case "CDE":
+                            systemCPU.WriteMemory(programAdress, 13);
+                            break;
+                        case "CIN":
+                            systemCPU.WriteMemory(programAdress, 14);
+                            break;
                         case "RST":
                             systemCPU.WriteMemory(programAdress, 250);
                             programAdress++;
@@ -177,8 +189,8 @@ namespace CPU_Concept
             Console.Write("Program counter: " + systemCPU.HaltRegisters[0] + "\t");
             Console.Write("Instruction: " + systemCPU.HaltRegisters[1] + "\r\n");
             Console.Write("Adress: " + systemCPU.Adress + "\t");
-            Console.Write("Adress in range: " + systemCPU.IndexOutOfRange + "\r\n");
-            Console.Write("Counter: " + systemCPU.HaltRegisters[7] + "\t");
+            Console.Write("Adress in range: " + systemCPU.IndexOutOfRange + "t");
+            Console.Write("Counter: " + systemCPU.HaltRegisters[7] + "\r\n");
             Console.Write("Register 0: " + systemCPU.HaltRegisters[2] + "dec" + "\t");
             Console.Write("Register 1: " + systemCPU.HaltRegisters[3] + "dec" + "\t");
             Console.Write("Temporary register: " + systemCPU.HaltRegisters[4] + "\r\n");

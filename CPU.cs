@@ -74,15 +74,15 @@ namespace CPU_Concept
             this._ProgramMemory = new Memory(2256);
             _graphicsMemory = 2000;
             _programMemorySize = this._ProgramMemory.MemorySize - _graphicsMemory;
-            _counter = new CPU_Registers(AddressBusWidth, true);
-            _adressRegister = new CPU_Registers(AddressBusWidth, false);
+            _counter = new CPU_Registers(AddressBusWidth);
+            _adressRegister = new CPU_Registers(AddressBusWidth * 2);
             _registers = new List<CPU_Registers>();
             for (int i = 0; i < NumberOfRegisters; i++)
             {
-                _registers.Add(new CPU_Registers(BusWidth, false));
+                _registers.Add(new CPU_Registers(BusWidth));
             }
-            this._tempRegister = new CPU_Registers(BusWidth * 2, false);
-            this._instructionRegister = new CPU_Registers(BusWidth, false);
+            this._tempRegister = new CPU_Registers(BusWidth * 2);
+            this._instructionRegister = new CPU_Registers(BusWidth);
             this._haltRegisters = new string[8];
         }
         public void Initialize()
@@ -106,17 +106,21 @@ namespace CPU_Concept
         #region CPU-functions
         public enum InstructionSet
         {
-            NoP,
-            LOAD,
-            SAVE,
-            READ,
-            ADD,
-            SUB,
-            MUX,
-            DIV,
-            SHL,
-            SHR,
-            WAIT,
+            NoP = 0,
+            LOAD = 1,
+            SAVE = 2,
+            READ = 3,
+            ADD = 4,
+            SUB = 5,
+            MUX = 6,
+            DIV = 7,
+            SHL = 8,
+            SHR = 9,
+            WAIT = 10,
+            DEC = 11,
+            INC = 12,
+            CDE = 13,
+            CIN = 14,
             RST = 250,
             HALT = 255
         }
@@ -193,24 +197,88 @@ namespace CPU_Concept
         {
             _counter.WriteRegister((byte)_registers[1].ReadRegister());
             _tempRegister.WriteRegister(_registers[1].ReadRegister());
-            if (!_counter.DecrementCounter())
+            if (DoCounterDec())
             {
                 _tempRegister.WriteRegister(0);
+
             }
             else
             {
-                _counter.DecrementCounter();
-            }
-            while(_counter.ReadRegister() > 0)
+                _tempRegister.WriteRegister(_registers[0].ReadRegister());
+             }
+            while (_counter.ReadRegister() > 0)
             {
                 _registers[1].WriteRegister(_tempRegister.ReadRegister());
                 DoAdd();
-                _counter.DecrementCounter();
+                DoCounterDec();
             }
         }
         private void DoDivision()
         {
             _tempRegister.WriteRegister(_registers[0].ReadRegister() / _registers[1].ReadRegister());
+        }
+        private bool DoDec(int Adress)
+        {
+            bool _isNegative = false;
+            int _counterValue = _registers[Adress].ReadRegister();
+            int newValue = _counterValue - 1;
+            if (newValue < 0 )
+            {
+                _isNegative = true;
+                _registers[Adress].WriteRegister(0);
+            } else
+            {
+                _registers[Adress].WriteRegister(_counterValue - 1);
+            }
+            return _isNegative;
+        }
+        private bool DoInc(int Adress)
+        {
+            bool _overFlow = false;
+            int _counterValue = _registers[Adress].ReadRegister();
+            int newValue = _counterValue + 1;
+            if (newValue > 255)
+            {
+                _overFlow = true;
+                _registers[Adress].WriteRegister(255);
+            }
+            else
+            {
+                _registers[Adress].WriteRegister(_counterValue + 1);
+            }
+            return _overFlow;
+        }
+        private bool DoCounterDec()
+        {
+            bool _isNegative = false;
+            int _counterValue = _counter.ReadRegister();
+            int newValue = _counterValue - 1;
+            if (newValue < 0)
+            {
+                _isNegative = true;
+                _counter.WriteRegister(0);
+            }
+            else
+            {
+                _counter.WriteRegister(_counterValue - 1);
+            }
+            return _isNegative;
+        }
+        private bool DoCounterInc()
+        {
+            bool _overFlow = false;
+            int _counterValue = _counter.ReadRegister();
+            int newValue = _counterValue + 1;
+            if (newValue > 255)
+            {
+                _overFlow = true;
+                _counter.WriteRegister(255);
+            }
+            else
+            {
+                _counter.WriteRegister(_counterValue + 1);
+            }
+            return _overFlow;
         }
         private void DoHalt()
         {
@@ -283,6 +351,22 @@ namespace CPU_Concept
                     break;
                 case InstructionSet.RST:
                     DoReset();
+                    break;
+                case InstructionSet.DEC:
+                    _adressRegister.WriteRegister(_programCounter);
+                    _programCounter++;
+                    DoDec(_adressRegister.ReadRegister());
+                    break;
+                case InstructionSet.INC:
+                    _adressRegister.WriteRegister(_programCounter);
+                    _programCounter++;
+                    DoInc(_adressRegister.ReadRegister());
+                    break;
+                case InstructionSet.CDE:
+                    DoCounterDec();
+                    break;
+                case InstructionSet.CIN:
+                    DoCounterInc();
                     break;
                 default:
                     DoUnknownOp();
