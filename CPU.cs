@@ -400,7 +400,7 @@ namespace CPU_Concept
         /// Sets the programcounter to the new adress if the required parameter is zero
         /// </summary>
         /// <param name="AdressToJumpTo"></param>
-        private void JumpIfZero(int AdressToJumpTo)
+        private void DoJumpIfZero(int AdressToJumpTo, int JumpCondition)
         {
 
         }
@@ -509,10 +509,14 @@ namespace CPU_Concept
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
                     break;
                 case InstructionSet.JMP:
-                    DoJump();
+                    _adressRegister.WriteRegister(_programCounter.ReadRegister());
+                    _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
+                    DoJump(_adressRegister.ReadRegister());
                     break;
                 case InstructionSet.JZ:
-                    DoJumpIfZero();
+                    _adressRegister.WriteRegister(_programCounter.ReadRegister());
+                    _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
+                    DoJumpIfZero(_adressRegister.ReadRegister());
                     break;
                 default:
                     DoUnknownOp();
