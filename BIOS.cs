@@ -8,6 +8,7 @@ namespace CPU_Concept
         private bool _inInterpreter;
         private byte[] _programToRun = new byte[256];
         private CPU systemCPU;
+        private CPU.InstructionSet biosInstructions;
 
         string _biosInput;
         string[] _splitBiosInput;
@@ -90,88 +91,102 @@ namespace CPU_Concept
                 }
                 else if (!_splitBiosInput[0].Equals(""))
                 {
-                    switch (_splitBiosInput[0].ToUpper())
+                    var opCode = (CPU.InstructionSet)Enum.Parse(typeof(CPU.InstructionSet), _splitBiosInput[0].ToUpper());
+                    //switch (_splitBiosInput[0].ToUpper())
+                    switch (opCode)
                     {
-                        case "NOP":
-                            systemCPU.WriteMemory(programAdress, 0);
+                        case CPU.InstructionSet.NoP:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.NoP);
                             programAdress++;
                             break;
-                        case "MOV":
-                            systemCPU.WriteMemory(programAdress, 1);
+                        case CPU.InstructionSet.MOV:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.MOV);
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
                             programAdress++;
                             break;
-                        case "SAVE":
-                            systemCPU.WriteMemory(programAdress, 2);
+                        case CPU.InstructionSet.SAVE:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                             programAdress++;
                             break;
-                        case "READ":
-                            systemCPU.WriteMemory(programAdress, 3);
+                        case CPU.InstructionSet.READ:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
                             programAdress++;
                             break;
-                        case "ADD":
-                            systemCPU.WriteMemory(programAdress, 4);
+                        case CPU.InstructionSet.ADD:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.ADD);
                             programAdress++;
                             break;
-                        case "SUB":
-                            systemCPU.WriteMemory(programAdress, 5);
+                        case CPU.InstructionSet.SUB:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SUB);
                             programAdress++;
                             break;
-                        case "MUX":
-                            systemCPU.WriteMemory(programAdress, 6);
+                        case CPU.InstructionSet.MUX:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.MUX);
                             programAdress++;
                             break;
-                        case "DIV":
-                            systemCPU.WriteMemory(programAdress, 7);
+                        case CPU.InstructionSet.DIV:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.DIV);
                             programAdress++;
                             break;
-                        case "SHL":
-                            systemCPU.WriteMemory(programAdress, 8);
-                            programAdress++;
-                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
-                            programAdress++;
-                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
-                            programAdress++;
-                            break;
-                        case "SHR":
-                            systemCPU.WriteMemory(programAdress, 9);
+                        case CPU.InstructionSet.SHL:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
                             programAdress++;
                             break;
-                        case "WAIT":
-                            systemCPU.WriteMemory(programAdress, 10);
+                        case CPU.InstructionSet.SHR:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
                             programAdress++;
                             break;
-                        case "HALT":
-                            systemCPU.WriteMemory(programAdress, 255);
+                        case CPU.InstructionSet.WAIT:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.WAIT);
                             programAdress++;
                             break;
-                        case "DEC":
-                            systemCPU.WriteMemory(programAdress, 11);
+                        case CPU.InstructionSet.HALT:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.HALT);
+                            programAdress++;
                             break;
-                        case "INC":
-                            systemCPU.WriteMemory(programAdress, 12);
+                        case CPU.InstructionSet.DEC:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
                             break;
-                        case "CDE":
-                            systemCPU.WriteMemory(programAdress, 13);
+                        case CPU.InstructionSet.INC:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
                             break;
-                        case "CIN":
-                            systemCPU.WriteMemory(programAdress, 14);
+                        case CPU.InstructionSet.CDE:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.CDE);
                             break;
-                        case "LOAD":
+                        case CPU.InstructionSet.CIN:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.CIN);
                             break;
-                        case "STORE":
+                        case CPU.InstructionSet.LOAD:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                            programAdress++;
                             break;
-                        case "RST":
-                            systemCPU.WriteMemory(programAdress, 250);
+                        case CPU.InstructionSet.STORE:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
+                            programAdress++;
+                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                            programAdress++;
+                            break;
+                        case CPU.InstructionSet.RST:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.RST);
                             programAdress++;
                             break;
                         default:

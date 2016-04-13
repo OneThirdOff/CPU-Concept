@@ -400,7 +400,7 @@ namespace CPU_Concept
         /// Sets the programcounter to the new adress if the required parameter is zero
         /// </summary>
         /// <param name="AdressToJumpTo"></param>
-        private void DoJumpIfZero(int AdressToJumpTo, int JumpCondition)
+        private void DoJumpIfZero(int AdressToJumpTo)
         {
 
         }
