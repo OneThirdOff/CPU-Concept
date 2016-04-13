@@ -7,7 +7,7 @@ The built in interpreter will allow the user to code then run the program.
 
 ###Instructionset:
 NoP - No Operation.  
-MOV [Register number] [Data] - Loads the Data in to the register  
+MOV [Data] [Register number] - Loads the Data in to the register  
 SAVE [Register number] - Saves the Temporary-register to the register  
 READ [Register number] - puts the register into the temp-register  
 ADD - Adds register 0 and 1 and stores the sum in the temp-register  
