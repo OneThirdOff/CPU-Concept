@@ -6,7 +6,16 @@ namespace CPU_Concept
     {
         static void Main(string[] args)
         {
-            Console.SetBufferSize(80, 25);
+            int height = 25;
+            int width = 80;
+            try
+            {
+                Console.SetBufferSize(width, height);
+            } catch (Exception)
+            {
+
+            }
+            
             BIOS systemBios = new BIOS();
             if (!systemBios.CPUFault)
             {
