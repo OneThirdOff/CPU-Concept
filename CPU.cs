@@ -149,7 +149,7 @@ namespace CPU_Concept
         #region CPU-functions
         public enum InstructionSet
         {
-            NoP = 0,
+            NOP = 0,
             MOV = 1,
             SAVE = 2,
             READ = 3,
@@ -439,7 +439,7 @@ namespace CPU_Concept
             
             switch ((InstructionSet)_instructionRegister.ReadRegister())
                 {
-                case InstructionSet.NoP:
+                case InstructionSet.NOP:
                     DoNoP();
                     break;
                 case InstructionSet.MOV:

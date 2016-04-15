@@ -95,8 +95,8 @@ namespace CPU_Concept
                     //switch (_splitBiosInput[0].ToUpper())
                     switch (opCode)
                     {
-                        case CPU.InstructionSet.NoP:
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.NoP);
+                        case CPU.InstructionSet.NOP:
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.NOP);
                             programAdress++;
                             break;
                         case CPU.InstructionSet.MOV:
