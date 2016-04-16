@@ -353,22 +353,63 @@ namespace CPU_Concept
                         #endregion
                         #region LOAD
                         case "LOAD":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
-                            programAdress++;
-                            _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
-                            programAdress += 2;
-                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
-                            programAdress++;
+                            if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
+                            {
+                                switch (_splitBiosInput[2])
+                                {
+                                    case "A":
+                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
+                                        programAdress++;
+                                        _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
+                                        programAdress += 2;
+                                        systemCPU.WriteMemory(programAdress, 0);
+                                        programAdress++;
+                                        break;
+                                    case "B":
+                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
+                                        programAdress++;
+                                        _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
+                                        programAdress += 2;
+                                        systemCPU.WriteMemory(programAdress, 0);
+                                        programAdress++;
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Missing or incorrect register in entry.");
+                                break;
+                            }
                             break;
                         #endregion
                         #region STORE
                         case "STORE":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
-                            programAdress++;
-                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
-                            programAdress++;
-                            _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
-                            programAdress += 2;
+                            if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
+                            {
+                                switch (_splitBiosInput[1])
+                                {
+                                    case "A":
+                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
+                                        programAdress++;
+                                        systemCPU.WriteMemory(programAdress, 0);
+                                        programAdress++;
+                                        _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
+                                        programAdress += 2;
+                                        break;
+                                    case "B":
+                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
+                                        programAdress++;
+                                        systemCPU.WriteMemory(programAdress, 1);
+                                        programAdress++;
+                                        _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
+                                        programAdress += 2;
+                                        break;
+                                }
+                            } else
+                            {
+                                Console.WriteLine("Missing or incorrect register in entry.");
+                                break;
+                            }
                             break;
                         #endregion
                         #region Reset
