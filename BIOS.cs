@@ -107,10 +107,10 @@ namespace CPU_Concept
                     Console.WriteLine("DIV - Divides register A by register B and saves the result to the\r\n temp-register.");
                     Console.WriteLine("SHL [register] [amount] - Shift the register [amount] times to the left.");
                     Console.WriteLine("SHR [register] [amount] - Shift the register [amount] times to the right.");
-                    Console.WriteLine("DEC [register] - Decrements (reduces) the register by one.");
-                    Console.WriteLine("INC [register] - Increments (increases) the register by one.");
-                    Console.WriteLine("CDE - Decrements the counter by one.");
-                    Console.WriteLine("CIN - Increments the counter by one.");
+                    Console.WriteLine("DEC/INC [register] - Decrements or Increments the register by one.");
+                    Console.WriteLine("CDE, CIN - Decrements or Increments the counter by one.");
+                    Console.WriteLine("JMP [adress] - Jumps to the adress of the memory.");
+                    Console.WriteLine("JZ [adress to jump to] [adress to check if zero] - jumps if checked is zero.");
                     Console.WriteLine("LOAD [adress] [register] - Loads the value in the memory adress to the register");
                     Console.WriteLine("STORE [register] [adress] - Stores the value in the register to the memory.");
                     Console.WriteLine("HALT - Halts the cpu. At the moment, the only way to stop the program.");
@@ -369,6 +369,14 @@ namespace CPU_Concept
                         #region Counter Increment
                         case "CIN":
                             systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.CIN);
+                            break;
+                        #endregion
+                        #region JMP
+                        case "JMP":
+                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.JMP);
+                            programAdress++;
+                            _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
+                            programAdress++;
                             break;
                         #endregion
                         #region LOAD
