@@ -111,8 +111,6 @@ namespace CPU_Concept
             this._programMemorySize = this._ProgramMemory.MemorySize - _graphicsMemory;
             this._counter = new CPU_Registers(AddressBusWidth);
             this._programCounter = new CPU_Registers(AddressBusWidth);
-            // Temp-register is always twice the bus-width. (Seemed like a good idea at the time.
-            //this._adressBus = new CPU_Registers(AddressBusWidth * 2); // Turned Adressbus to an int
             this._tempRegister = new CPU_Registers(BusWidth * 2);
             this._instructionRegister = new CPU_Registers(BusWidth);
             this._haltRegisters = new string[8];
@@ -172,6 +170,10 @@ namespace CPU_Concept
             HALT = 255
         }
 
+        private int GetAdress(int ProgramAdress)
+        {
+            return (_ProgramMemory.ReadMemByte(ProgramAdress) * 255) + _ProgramMemory.ReadMemByte(ProgramAdress + 1);
+        }
         /// <summary>
         /// Checks if the adress is in range of the memory.
         /// </summary>
@@ -482,12 +484,12 @@ namespace CPU_Concept
                     DoReset();
                     break;
                 case InstructionSet.DEC:
-                    _adressBus= _programCounter.ReadRegister();
+                    _adressBus= GetAdress(_programCounter.ReadRegister());
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
                     DoDec(_adressBus);
                     break;
                 case InstructionSet.INC:
-                    _adressBus = _programCounter.ReadRegister();
+                    _adressBus = GetAdress(_programCounter.ReadRegister());
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
                     DoInc(_adressBus);
                     break;
@@ -498,24 +500,24 @@ namespace CPU_Concept
                     DoCounterInc();
                     break;
                 case InstructionSet.LOAD:
-                    _adressBus = _programCounter.ReadRegister();
-                    _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
+                    _adressBus = GetAdress(_programCounter.ReadRegister());
+                    _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
                     DoLoad(_adressBus, _ProgramMemory.ReadMemByte(_programCounter.ReadRegister()));
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
                     break;
                 case InstructionSet.STORE:
-                    _adressBus= _programCounter.ReadRegister() + 1;
+                    _adressBus= GetAdress(_programCounter.ReadRegister() + 1);
                     DoStore(_ProgramMemory.ReadMemByte(_programCounter.ReadRegister()), _adressBus);
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
                     break;
                 case InstructionSet.JMP:
-                    _adressBus= _programCounter.ReadRegister();
-                    _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
+                    _adressBus= GetAdress(_programCounter.ReadRegister());
+                    _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
                     DoJump(_adressBus);
                     break;
                 case InstructionSet.JZ:
-                    _adressBus= _programCounter.ReadRegister();
-                    _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
+                    _adressBus= GetAdress(_programCounter.ReadRegister());
+                    _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
                     DoJumpIfZero(_adressBus);
                     break;
                 default:

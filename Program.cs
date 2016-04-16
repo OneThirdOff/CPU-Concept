@@ -8,14 +8,9 @@ namespace CPU_Concept
         {
             int height = 25;
             int width = 80;
-            try
-            {
-                Console.SetBufferSize(width, height);
-            } catch (Exception)
-            {
+            Console.SetWindowSize(width, height);
+            Console.SetBufferSize(width, height);
 
-            }
-            
             BIOS systemBios = new BIOS();
             if (!systemBios.CPUFault)
             {

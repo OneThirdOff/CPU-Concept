@@ -92,7 +92,6 @@ namespace CPU_Concept
                 else if (!_splitBiosInput[0].Equals(""))
                 {
                     var opCode = (CPU.InstructionSet)Enum.Parse(typeof(CPU.InstructionSet), _splitBiosInput[0].ToUpper());
-                    //switch (_splitBiosInput[0].ToUpper())
                     switch (opCode)
                     {
                         case CPU.InstructionSet.NOP:
@@ -172,8 +171,8 @@ namespace CPU_Concept
                         case CPU.InstructionSet.LOAD:
                             systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
                             programAdress++;
-                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
-                            programAdress++;
+                            _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
+                            programAdress += 2;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
                             programAdress++;
                             break;
@@ -182,8 +181,8 @@ namespace CPU_Concept
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                             programAdress++;
-                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
-                            programAdress++;
+                            _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
+                            programAdress += 2;
                             break;
                         case CPU.InstructionSet.RST:
                             systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.RST);
@@ -228,6 +227,25 @@ namespace CPU_Concept
                     Console.Write(":");
                 }
             }
+        }
+
+        private void _writeAdress(int Adress, int ProgramAdress)
+        {
+            //systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+            int mostSignificant = 0;
+            int leastSignificant = 0;
+            if (Adress > 255)
+            {
+                mostSignificant = Adress / 255;
+                leastSignificant = Adress % 255;
+            }
+            else
+            {
+                mostSignificant = 0;
+                leastSignificant = Adress;
+            }
+            systemCPU.WriteMemory(ProgramAdress, (byte)mostSignificant);
+            systemCPU.WriteMemory(ProgramAdress  + 1, (byte)leastSignificant);
         }
 
         public void DoExitBios()
