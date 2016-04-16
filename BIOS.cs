@@ -23,6 +23,7 @@ namespace CPU_Concept
         {
             version = Assembly.GetEntryAssembly().GetName().Version;
             systemCPU = new CPU(8, 16, 2);
+
             systemCPU.Initialize();
             _inInterpreter = true;
             checkCPU();
@@ -99,11 +100,27 @@ namespace CPU_Concept
                             programAdress++;
                             break;
                         case CPU.InstructionSet.MOV:
+                            if (!_splitBiosInput[2].Equals("A") || !_splitBiosInput[2].Equals("B"))
+                            {
+                                break;
+                            }
                             systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.MOV);
                             programAdress++;
                             systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                             programAdress++;
-                            systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                            
+                            switch (_splitBiosInput[2])
+                            {
+                                case "A":
+                                    systemCPU.WriteMemory(programAdress, 0);
+                                    break;
+                                case "B":
+                                    systemCPU.WriteMemory(programAdress, 1);
+                                    break;
+                                default:
+                                    break;
+                            }
+                            
                             programAdress++;
                             break;
                         case CPU.InstructionSet.SAVE:
@@ -209,8 +226,8 @@ namespace CPU_Concept
             Console.Write("Adress: " + systemCPU.Adress + "\t");
             Console.Write("Adress in range: " + systemCPU.IndexOutOfRange + "t");
             Console.Write("Counter: " + systemCPU.HaltRegisters[7] + "\r\n");
-            Console.Write("Register 0: " + systemCPU.HaltRegisters[2] + "dec" + "\t");
-            Console.Write("Register 1: " + systemCPU.HaltRegisters[3] + "dec" + "\t");
+            Console.Write("A: " + systemCPU.HaltRegisters[2] + "dec" + "\t");
+            Console.Write("B: " + systemCPU.HaltRegisters[3] + "dec" + "\t");
             Console.Write("Temporary register: " + systemCPU.HaltRegisters[4] + "\r\n");
             Console.Write("Overflow: " + systemCPU.HaltRegisters[5] + "\t\t");
             Console.Write("Underflow: " + systemCPU.HaltRegisters[6] + "\r\n");
