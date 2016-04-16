@@ -78,7 +78,7 @@ namespace CPU_Concept
 
         public void DoRunInterpreter()
         {
-            Console.WriteLine("Program 1 operation per line, prefix with linenumber to correct line.");
+            Console.WriteLine("Program 1 operation per line. '?' for help.");
             int programAdress = 1;
             while (InBios)
             {
@@ -94,6 +94,26 @@ namespace CPU_Concept
                 if (_splitBiosInput[0].ToUpper().Equals("RUN"))
                 {
                     _inInterpreter = false;
+                } else if (_splitBiosInput[0].Equals("?"))
+                {
+                    Console.WriteLine("CPU Opreation-codes and usage:");
+                    Console.WriteLine("NOP - No Operation.");
+                    Console.WriteLine("MOV [value] [register] - Moves the value into the named register. Registers are A and B.");
+                    Console.WriteLine("SAVE [register] - Saves the value from temp-register to the register.");
+                    Console.WriteLine("READ [register] - Reads the value from the register and saves to the\r\n temp-register.");
+                    Console.WriteLine("ADD - Adds register A and B and stores the result to the temp-register.");
+                    Console.WriteLine("SUB - Subrtracts register B from register A and saves the result to the\r\n temp-register.");
+                    Console.WriteLine("MUX - Multiplies register A by register B and saves the result to the\r\n temp-register.");
+                    Console.WriteLine("DIV - Divides register A by register B and saves the result to the\r\n temp-register.");
+                    Console.WriteLine("SHL [register] [amount] - Shift the register [amount] times to the left.");
+                    Console.WriteLine("SHR [register] [amount] - Shift the register [amount] times to the right.");
+                    Console.WriteLine("DEC [register] - Decrements (reduces) the register by one.");
+                    Console.WriteLine("INC [register] - Increments (increases) the register by one.");
+                    Console.WriteLine("CDE - Decrements the counter by one.");
+                    Console.WriteLine("CIN - Increments the counter by one.");
+                    Console.WriteLine("LOAD [adress] [register] - Loads the value in the memory adress to the register");
+                    Console.WriteLine("STORE [register] [adress] - Stores the value in the register to the memory.");
+                    Console.WriteLine("HALT - Halts the cpu. At the moment, the only way to stop the program.");
                 }
                 else if (!_splitBiosInput[0].Equals(""))
                 {
