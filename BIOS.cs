@@ -96,15 +96,15 @@ namespace CPU_Concept
                     _inInterpreter = false;
                 } else if (_splitBiosInput[0].Equals("?"))
                 {
-                    Console.WriteLine("CPU Opreation-codes and usage:");
+                    Console.WriteLine("CPU Opreation-codes and usage. Valid registers are A and B.");
                     Console.WriteLine("NOP - No Operation.");
-                    Console.WriteLine("MOV [value] [register] - Moves the value into the named register. Registers are A and B.");
+                    Console.WriteLine("MOV [value] [register] - Moves the value into the named register.");
                     Console.WriteLine("SAVE [register] - Saves the value from temp-register to the register.");
-                    Console.WriteLine("READ [register] - Reads the value from the register and saves to the\r\n temp-register.");
+                    Console.WriteLine("READ [register] - Reads the value from the register, saves to temp-register.");
                     Console.WriteLine("ADD - Adds register A and B and stores the result to the temp-register.");
-                    Console.WriteLine("SUB - Subrtracts register B from register A and saves the result to the\r\n temp-register.");
-                    Console.WriteLine("MUX - Multiplies register A by register B and saves the result to the\r\n temp-register.");
-                    Console.WriteLine("DIV - Divides register A by register B and saves the result to the\r\n temp-register.");
+                    Console.WriteLine("SUB - Subrtracts register B from register A, saves to temp-register.");
+                    Console.WriteLine("MUX - Multiplies register A by register B, saves to temp-register.");
+                    Console.WriteLine("DIV - Divides register A by register B, saves to temp-register.");
                     Console.WriteLine("SHL [register] [amount] - Shift the register [amount] times to the left.");
                     Console.WriteLine("SHR [register] [amount] - Shift the register [amount] times to the right.");
                     Console.WriteLine("DEC/INC [register] - Decrements or Increments the register by one.");
@@ -465,7 +465,7 @@ namespace CPU_Concept
             Console.Write("Program counter: " + systemCPU.HaltRegisters[0] + "\t");
             Console.Write("Instruction: " + systemCPU.HaltRegisters[1] + "\r\n");
             Console.Write("Adress: " + systemCPU.Adress + "\t");
-            Console.Write("Adress in range: " + systemCPU.IndexOutOfRange + "t");
+            Console.Write("Adress in range: " + systemCPU.IndexOutOfRange + "\t");
             Console.Write("Counter: " + systemCPU.HaltRegisters[7] + "\r\n");
             Console.Write("A: " + systemCPU.HaltRegisters[2] + "dec" + "\t");
             Console.Write("B: " + systemCPU.HaltRegisters[3] + "dec" + "\t");

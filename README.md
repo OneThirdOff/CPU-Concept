@@ -1,7 +1,6 @@
 # CPU-Concept
 
-The CPU has, at the moment, two one-bit registers and 256byte of memory. Sequentially accessable.
-No jump funtion yet, so only linear programs.
+The CPU has, at the moment, two one-bit registers (A and B) and 256byte of memory plus 2k of graphics memory. Sequentially accessable.
 
 The built in interpreter will allow the user to code then run the program.
 
