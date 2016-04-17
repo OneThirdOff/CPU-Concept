@@ -134,7 +134,7 @@ namespace CPU_Concept
                                 systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                                 programAdress++;
 
-                                switch (_splitBiosInput[2])
+                                switch (_splitBiosInput[2].ToUpper())
                                 {
                                     case "A":
                                         systemCPU.WriteMemory(programAdress, 0);
@@ -143,12 +143,14 @@ namespace CPU_Concept
                                         systemCPU.WriteMemory(programAdress, 1);
                                         break;
                                     default:
+                                        Console.WriteLine("Incorrect register in entry.");  //Error message if you try to write to a non-existent register
+                                        programAdress -= 3;                                 //and moves programAdress back to previous state
                                         break;
                                 }
                                 programAdress++;
                             } else
                             {
-                                Console.WriteLine("Missing or incorrect register in entry.");
+                                Console.WriteLine("Missing register in entry.");
                                 break;
                             }
                             break;
