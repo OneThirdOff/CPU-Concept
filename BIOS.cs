@@ -129,7 +129,7 @@ namespace CPU_Concept
                         case "MOV":
                             if (_splitBiosInput.Length < 3)
                             {
-                                Console.WriteLine("Missing register in entry.");
+                                Console.WriteLine("Missing value and/or register in entry.");
                                 break;
                             }
                             if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
@@ -155,7 +155,7 @@ namespace CPU_Concept
                                         break;
                                 }
                                 
-                            } else
+                            } else  //do we even need this anymore?
                             {
                                 Console.WriteLine("Missing register in entry.");
                                 break;
