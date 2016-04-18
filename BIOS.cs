@@ -109,10 +109,10 @@ namespace CPU_Concept
                     Console.WriteLine("SHR [register] [amount] - Shift the register [amount] times to the right.");
                     Console.WriteLine("DEC/INC [register] - Decrements or Increments the register by one.");
                     Console.WriteLine("CDE, CIN - Decrements or Increments the counter by one.");
-                    Console.WriteLine("JMP [adress] - Jumps to the adress of the memory.");
-                    Console.WriteLine("JZ [adress to jump to] [adress to check if zero] - jumps if checked is zero.");
-                    Console.WriteLine("LOAD [adress] [register] - Loads the value in the memory adress to the register");
-                    Console.WriteLine("STORE [register] [adress] - Stores the value in the register to the memory.");
+                    Console.WriteLine("JMP [address] - Jumps to the address of the memory.");
+                    Console.WriteLine("JZ [address to jump to] [address to check if zero] - jumps if checked is zero.");
+                    Console.WriteLine("LOAD [address] [register] - Loads the value in the memory address to the register");
+                    Console.WriteLine("STORE [register] [address] - Stores the value in the register to the memory.");
                     Console.WriteLine("HALT - Halts the cpu. At the moment, the only way to stop the program.");
                     Console.WriteLine("RUN - runs the program.");
                 }
@@ -250,6 +250,11 @@ namespace CPU_Concept
                         #endregion
                         #region Shift Left
                         case "SHL":
+                            if (_splitBiosInput.Length < 3)
+                            {
+                                Console.WriteLine("Missing value and/or register in entry.");
+                                break;
+                            }
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
                                 switch (_splitBiosInput[1].ToUpper())
@@ -282,6 +287,11 @@ namespace CPU_Concept
                         #endregion
                         #region Shift Right
                         case "SHR":
+                            if (_splitBiosInput.Length < 3)
+                            {
+                                Console.WriteLine("Missing value and/or register in entry.");
+                                break;
+                            }
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
                                 switch (_splitBiosInput[1].ToUpper())
@@ -355,6 +365,11 @@ namespace CPU_Concept
                         #endregion
                         #region INC
                         case "INC":
+                            if (_splitBiosInput.Length < 2)     //making sure the user actually specifies a register
+                            {
+                                Console.WriteLine("Missing register in entry.");
+                                break;
+                            }
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
                                 switch (_splitBiosInput[1].ToUpper())
@@ -391,6 +406,11 @@ namespace CPU_Concept
                         #endregion
                         #region JMP
                         case "JMP":
+                            if (_splitBiosInput.Length < 2)     //making sure the user actually specifies an address
+                            {
+                                Console.WriteLine("Missing register in entry.");
+                                break;
+                            }
                             systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.JMP);
                             programAdress++;
                             _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
@@ -399,6 +419,11 @@ namespace CPU_Concept
                         #endregion
                         #region LOAD
                         case "LOAD":
+                            if (_splitBiosInput.Length < 3)     //making sure the user actually specifies an address and register
+                            {
+                                Console.WriteLine("Missing address and/or register in entry.");
+                                break;
+                            }
                             if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
                             {
                                 switch (_splitBiosInput[2].ToUpper())
@@ -430,6 +455,11 @@ namespace CPU_Concept
                         #endregion
                         #region STORE
                         case "STORE":
+                            if (_splitBiosInput.Length < 3)     //making sure the user actually specifies an address and register
+                            {
+                                Console.WriteLine("Missing address and/or register in entry.");
+                                break;
+                            }
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
                                 switch (_splitBiosInput[1].ToUpper())
