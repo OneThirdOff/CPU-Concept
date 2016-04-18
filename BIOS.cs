@@ -132,6 +132,7 @@ namespace CPU_Concept
                                 Console.WriteLine("Missing value and/or register in entry.");
                                 break;
                             }
+
                             if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
                             {
                                 systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.MOV);
@@ -154,12 +155,12 @@ namespace CPU_Concept
                                         programAdress -= 2;                                 //and moves programAdress back to previous state
                                         break;
                                 }
-                                
-                            } else  //do we even need this anymore?
-                            {
-                                Console.WriteLine("Missing register in entry.");
-                                break;
-                            }
+                            }  
+                            //} else  //do we even need this anymore?
+                            //{
+                            //    Console.WriteLine("Missing register in entry.");
+                            //    break;
+                            //}
                             break;
                         #endregion
                         #region SAVE
@@ -181,12 +182,13 @@ namespace CPU_Concept
                                         programAdress++;
                                         break;
                                     default:
+                                        Console.WriteLine("incorrect register in entry.");
                                         break;
                                 }
                             }
                             else
                             {
-                                Console.WriteLine("Missing or incorrect register in entry.");
+                                Console.WriteLine("Missing register in entry.");
                                 break;
                             }
                             break;
@@ -210,12 +212,13 @@ namespace CPU_Concept
                                         programAdress++;
                                         break;
                                     default:
+                                        Console.WriteLine("Incorrect register in entry.");
                                         break;
                                 }
                             }
                             else
                             {
-                                Console.WriteLine("Missing or incorrect register in entry.");
+                                Console.WriteLine("Missing register in entry.");
                                 break;
                             }
                             break;
