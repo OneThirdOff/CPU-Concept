@@ -6,24 +6,22 @@ The built in interpreter will allow the user to code then run the program.
 
 ###Instructionset:
 NOP - No Operation.  
-MOV [Data] [Register number] - Loads the Data in to the register  
-SAVE [Register number] - Saves the Temporary-register to the register  
-READ [Register number] - puts the register into the temp-register  
-ADD - Adds register 0 and 1 and stores the sum in the temp-register  
-SUB - Subtracts register 0 and 1 and stores the sum in the temp-register  
-MUX - Multiplies register 0 by 1 and stores the sum in the temp-register  
-DIV - Divides register 0 by 1 and stores the sum in the temp-register  
-SHL [Register number] [number of shifts] - Bitwise-shifts the register by a number of hops to the left  
-SHR [Register number] [number of shifts] - Bitwise-shifts the register by a number of hops to the right  
-DEC [Register number] - Reduces the register by one if possible. Leaves at 0 if not.  
-INC [Register number] - Increments the register by one if possible. Leaves at 255 if not.  
-CDE - Reduces the counter-register by one if possible. Leaves at 0 if not.  
-CIN - Increments the counter-register by one if possible. Leaves at 255 if not.  
+MOV [value] [register] - Moves the value into the named register. 
+SAVE [register] - Saves the value from temp-register to the register. 
+READ [register] - Reads the value from the register, saves to temp-register.  
+ADD - Adds register A and B and stores the result to the temp-register.  
+SUB - Subrtracts register B from register A, saves to temp-register.
+MUX - Multiplies register A by register B, saves to temp-register. Writes register B while multiplying.
+DIV - Divides register A by register B, saves to temp-register.
+SHL [Register] [number of shifts] - Bitwise-shifts the register by a number of hops to the left.
+SHR [Register] [number of shifts] - Bitwise-shifts the register by a number of hops to the right.
+DEC/INC [register] - Decrements or Increments the register by one.
+CDE, CIN - Decrements or Increments the counter by one.
 WAIT - for now does nothing.  
-LOAD [Memory Adress] [Register number] - Loads the data from memory to the register.  
-STORE [Register number] [Memory Adress] - Stores the content of the register to memory.  
-JMP [adress] - Sets instruction-counter to adress.
-JZ [adress to jump to] [adress to check if zero] - Jumps if checked adress is zero.
+LOAD [adress] [register] - Loads the value in the memory adress to the register.  
+STORE [register] [adress] - Stores the value in the register to the memory.  
+JMP [adress] - Jumps to the adress of the memory.
+JZ [adress to jump to] [adress to check if zero] - jumps if checked is zero.
 RST - Resets the cpu clearing memory and registers.  
-HALT - Halts the cpu, and ends the program. (for now needed to exit)  
-RUN - run the program  
+HALT - Halts the cpu. At the moment, the only way to stop the program.
+RUN - runs the program  

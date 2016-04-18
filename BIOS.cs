@@ -103,7 +103,7 @@ namespace CPU_Concept
                     Console.WriteLine("READ [register] - Reads the value from the register, saves to temp-register.");
                     Console.WriteLine("ADD - Adds register A and B and stores the result to the temp-register.");
                     Console.WriteLine("SUB - Subrtracts register B from register A, saves to temp-register.");
-                    Console.WriteLine("MUX - Multiplies register A by register B, saves to temp-register.");
+                    Console.WriteLine("MUX - Multiplies register A by register B, saves to temp-register. Writes to register B while multiplying");
                     Console.WriteLine("DIV - Divides register A by register B, saves to temp-register.");
                     Console.WriteLine("SHL [register] [amount] - Shift the register [amount] times to the left.");
                     Console.WriteLine("SHR [register] [amount] - Shift the register [amount] times to the right.");
@@ -114,6 +114,7 @@ namespace CPU_Concept
                     Console.WriteLine("LOAD [adress] [register] - Loads the value in the memory adress to the register");
                     Console.WriteLine("STORE [register] [adress] - Stores the value in the register to the memory.");
                     Console.WriteLine("HALT - Halts the cpu. At the moment, the only way to stop the program.");
+                    Console.WriteLine("RUN - runs the program.");
                 }
                 else if (!_splitBiosInput[0].Equals(""))
                 {
