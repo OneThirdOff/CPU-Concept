@@ -324,6 +324,11 @@ namespace CPU_Concept
                         #endregion
                         #region DEC
                         case "DEC":
+                            if (_splitBiosInput.Length < 2)
+                            {
+                                Console.WriteLine("Missing register in entry.");
+                                break;
+                            }
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
                                 switch (_splitBiosInput[1].ToUpper())

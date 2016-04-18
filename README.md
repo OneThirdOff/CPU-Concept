@@ -18,10 +18,17 @@ SHR [Register] [number of shifts] - Bitwise-shifts the register by a number of h
 DEC/INC [register] - Decrements or Increments the register by one.
 CDE, CIN - Decrements or Increments the counter by one.
 WAIT - for now does nothing.  
+<<<<<<< HEAD
 LOAD [adress] [register] - Loads the value in the memory adress to the register.  
 STORE [register] [adress] - Stores the value in the register to the memory.  
 JMP [adress] - Jumps to the adress of the memory.
 JZ [adress to jump to] [adress to check if zero] - jumps if checked is zero.
+=======
+LOAD [Memory Adress] [Register number] - Loads the data from memory to the register.  
+STORE [Register number] [Memory Adress] - Stores the content of the register to memory.  
+JMP [adress] - Sets instruction-counter to adress.  
+JZ [adress to jump to] [adress to check if zero] - Jumps if checked adress is zero.  
+>>>>>>> d7abf05e0fd731979288c8996fe77dcd3c3df0f5
 RST - Resets the cpu clearing memory and registers.  
 HALT - Halts the cpu. At the moment, the only way to stop the program.
 RUN - runs the program  
