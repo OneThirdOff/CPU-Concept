@@ -127,6 +127,11 @@ namespace CPU_Concept
                         #endregion
                         #region MOV
                         case "MOV":
+                            if (_splitBiosInput.Length < 3)
+                            {
+                                Console.WriteLine("Missing register in entry.");
+                                break;
+                            }
                             if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
                             {
                                 systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.MOV);
@@ -146,7 +151,7 @@ namespace CPU_Concept
                                         break;
                                     default:
                                         Console.WriteLine("Incorrect register in entry.");  //Error message if you try to write to a non-existent register
-                                        programAdress -= 3;                                 //and moves programAdress back to previous state
+                                        programAdress -= 2;                                 //and moves programAdress back to previous state
                                         break;
                                 }
                                 
@@ -161,7 +166,7 @@ namespace CPU_Concept
                         case "SAVE":
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
-                                switch (_splitBiosInput[1])
+                                switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
                                         systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
@@ -190,7 +195,7 @@ namespace CPU_Concept
                         case "READ":
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
-                                switch (_splitBiosInput[1])
+                                switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
                                         systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
@@ -243,7 +248,7 @@ namespace CPU_Concept
                         case "SHL":
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
-                                switch (_splitBiosInput[1])
+                                switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
                                         systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
@@ -275,7 +280,7 @@ namespace CPU_Concept
                         case "SHR":
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
-                                switch (_splitBiosInput[1])
+                                switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
                                         systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
@@ -317,7 +322,7 @@ namespace CPU_Concept
                         case "DEC":
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
-                                switch (_splitBiosInput[1])
+                                switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
                                         systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
@@ -343,7 +348,7 @@ namespace CPU_Concept
                         case "INC":
                             if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
                             {
-                                switch (_splitBiosInput[1])
+                                switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
                                         systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
