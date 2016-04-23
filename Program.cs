@@ -1,22 +1,22 @@
 ﻿using System;
 
-namespace CPU_Concept
+namespace Hacking_Game
 {
-    class Program
+#if WINDOWS || LINUX
+    /// <summary>
+    /// The main class.
+    /// </summary>
+    public static class Program
     {
-        static void Main(string[] args)
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
         {
-            int height = 25;
-            int width = 80;
-            Console.SetWindowSize(width, height);
-            Console.SetBufferSize(width, height);
-
-            BIOS systemBios = new BIOS();
-            if (!systemBios.CPUFault)
-            {
-                systemBios.RunBios();
-            }
-            Console.Read();
+            using (var game = new Game1())
+                game.Run();
         }
     }
+#endif
 }

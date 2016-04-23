@@ -1,14 +1,25 @@
 ﻿using System;
 using System.Reflection;
 
-namespace CPU_Concept
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+
+namespace Hacking_Game
 {
-    class BIOS
+    public class BIOS
     {
         private bool _inInterpreter;
         private byte[] _programToRun = new byte[256];
         private CPU systemCPU;
-        private CPU.InstructionSet biosInstructions;
+        private int _graphicsMemorySize;
+        private int _ProgramMemorySize;
+        private int _graphicsMemoryFirstByte;
+        private string _screenCharacters;
+        private byte[] _screenBytes;
+
+        private int _charactersPerLine = 80;
+        private int _linesPerScreen = 25;
 
         string _biosInput;
         string[] _splitBiosInput;
@@ -16,33 +27,113 @@ namespace CPU_Concept
         public bool InBios { get { return _inInterpreter; } }
         public byte[] ProgramToRun { get { return _programToRun; } }
         public bool CPUFault { get { return systemCPU.Fault; } }
+        public Memory systemMemory;
+        public enum ScreenLines
+        {
+            Line1 = 0,
+            Line2 = 80,
+            Line3 = 160,
+            Line4 = 240,
+            Line5 = 320,
+            Line6 = 400,
+            Line7 = 480,
+            Line8 = 560,
+            Line9 = 640,
+            Line10 = 720,
+            Line11 = 800,
+            Line12 = 880,
+            Line13 = 960,
+            Line14 = 1040,
+            Line15 = 1120,
+            Line16 = 1200,
+            Line17 = 1280,
+            Line18 = 1360,
+            Line19 = 1440,
+            Line20 = 1520,
+            Line21 = 1600,
+            Line22 = 1680,
+            Line23 = 1760,
+            Line24 = 1840,
+            Line25 = 1920
+        }
 
         public Version version;
 
-        public BIOS()
+        public BIOS(int BusWidth, int AddressBusWidth, int NumberOfRegisters, int MemorySize, int ReservedMemForGraphics)
         {
             version = Assembly.GetEntryAssembly().GetName().Version;
-            systemCPU = new CPU(8, 16, 2);
+            systemCPU = new CPU(BusWidth, AddressBusWidth, NumberOfRegisters);
+            systemMemory = new Memory(MemorySize);
+            _graphicsMemorySize = ReservedMemForGraphics;
+            _ProgramMemorySize = MemorySize - ReservedMemForGraphics;
+            _graphicsMemoryFirstByte = _ProgramMemorySize;
 
             systemCPU.Initialize();
             _inInterpreter = true;
             checkCPU();
         }
 
+        #region Memory-handling
+        /// <summary>
+        /// Writes a byte to memory
+        /// </summary>
+        /// <param name="Adress">Int, Memory-adress you want to write to.</param>
+        /// <param name="ByteToWrite">Byte-value to write.</param>
+        public void WriteMemory(int Adress, byte ByteToWrite)
+        {
+            systemMemory.WriteMemByte(Adress, ByteToWrite);
+        }
+
+        /// <summary>
+        /// Read byte from memory.
+        /// </summary>
+        /// <param name="Adress">Adress to read from.</param>
+        /// <returns></returns>
+        public int ReadMemory(int Adress)
+        {
+            return systemMemory.ReadMemByte(Adress);
+        }
+
+        /// <summary>
+        /// Reads byte-array from memory.
+        /// </summary>
+        /// <param name="Address">Adress to start to read from.</param>
+        /// <param name="Length">Length specifies how many bytes to read.</param>
+        /// <returns></returns>
+        public int[] ReadMemory(int Address, int Length)
+        {
+            int[] returnBytes = new int[Length];
+            for (int i = Address; i < Length; i++)
+            {
+                returnBytes[Address] = ReadMemory(Address);
+            }
+            return returnBytes;
+        }
+
+        /// <summary>
+        /// Returns size of cpu-memory.
+        /// </summary>
+        public int MemorySize { get { return systemMemory.MemorySize; } }
+        /// <summary>
+        /// Returns size of program-allocatable memory.
+        /// </summary>
+        public int ProgramMemorySize { get { return _ProgramMemorySize; } }
+        #endregion
+
         private void checkCPU()
         {
-            for (int i = 0; i < systemCPU.MemorySize; i++)
+            for (int i = 0; i < systemMemory.MemorySize; i++)
             {
-                systemCPU.WriteMemory(i, 255);
-                if(systemCPU.ReadMemory(i) != 255)
+                WriteMemory(i, 255);
+                if (ReadMemory(i) != 255)
                 {
                     DoCPUFault(i);
                     break;
                 }
-                systemCPU.WriteMemory(i, 0);
-                 
+                WriteMemory(i, 0);
+
             }
-            systemCPU.WriteMemory(0, 255); //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
+            WriteMemory(0, 255); //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
         }
 
         public void DoCPUFault(int FaultAddress)
@@ -53,6 +144,13 @@ namespace CPU_Concept
             Console.WriteLine(systemCPU.HaltRegisters);
         }
 
+        public void Update()
+        {
+            //fill with fancy!
+            //DoRunInterpreter();
+            
+        }
+
         public void RunBios()
         {
             Console.WriteLine("BIOS " + version + " Loaded.");
@@ -61,7 +159,7 @@ namespace CPU_Concept
             while (!systemCPU.Halt)
             {
                 systemCPU.Update();
-                systemCPU.Draw();
+                
                 if (systemCPU.Reset)
                 {
                     RunBios();
@@ -80,23 +178,28 @@ namespace CPU_Concept
         {
             Console.WriteLine("Program 1 operation per line. '?' for help.");
             int programAdress = 1;
+            int _lineNumber = 0;
+            
             while (InBios)
             {
+                _lineNumber = 1;
                 _splitBiosInput = new string[3];
-                for (int i = 0; i < _splitBiosInput.Length; i++)
+                for (int j = 0; j < _splitBiosInput.Length; j++)
                 {
-                    _splitBiosInput[i] = "";
+                    _splitBiosInput[j] = "";
                 }
-
-                Console.Write(programAdress + ": ");
+                ScreenLines LineNumber = (ScreenLines)_lineNumber;
+                systemMemory.WriteMemSequence((int)LineNumber, DoCreateByteArray(": "));
+                
                 _biosInput = Console.ReadLine();
                 _splitBiosInput = _biosInput.Split(' ');
                 if (_splitBiosInput[0].ToUpper().Equals("RUN"))
                 {
                     _inInterpreter = false;
-                } else if (_splitBiosInput[0].Equals("?"))
+                }
+                else if (_splitBiosInput[0].Equals("?"))
                 {
-                    Console.WriteLine("CPU Opreation-codes and usage. Valid registers are A and B.");
+                    Console.WriteLine("CPU Operation-codes and usage. Valid registers are A and B.");
                     Console.WriteLine("NOP - No Operation.");
                     Console.WriteLine("MOV [value] [register] - Moves the value into the named register.");
                     Console.WriteLine("SAVE [register] - Saves the value from temp-register to the register.");
@@ -122,7 +225,7 @@ namespace CPU_Concept
                     {
                         #region NoP
                         case "NOP":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.NOP);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.NOP);
                             programAdress++;
                             break;
                         #endregion
@@ -136,19 +239,19 @@ namespace CPU_Concept
 
                             if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
                             {
-                                systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.MOV);
+                                WriteMemory(programAdress, (int)CPU.InstructionSet.MOV);
                                 programAdress++;
-                                systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
+                                WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
                                 programAdress++;
 
                                 switch (_splitBiosInput[2].ToUpper())
                                 {
                                     case "A":
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
                                         break;
                                     case "B":
-                                        systemCPU.WriteMemory(programAdress, 1);
+                                        WriteMemory(programAdress, 1);
                                         programAdress++;
                                         break;
                                     default:
@@ -156,7 +259,7 @@ namespace CPU_Concept
                                         programAdress -= 2;                                 //and moves programAdress back to previous state
                                         break;
                                 }
-                            }  
+                            }
                             //} else  //do we even need this anymore?
                             //{
                             //    Console.WriteLine("Missing register in entry.");
@@ -171,15 +274,15 @@ namespace CPU_Concept
                                 switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
                                         break;
                                     case "B":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 1);
+                                        WriteMemory(programAdress, 1);
                                         programAdress++;
                                         break;
                                     default:
@@ -201,15 +304,15 @@ namespace CPU_Concept
                                 switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
                                         break;
                                     case "B":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 1);
+                                        WriteMemory(programAdress, 1);
                                         programAdress++;
                                         break;
                                     default:
@@ -226,25 +329,25 @@ namespace CPU_Concept
                         #endregion
                         #region ADD
                         case "ADD":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.ADD);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.ADD);
                             programAdress++;
                             break;
                         #endregion
                         #region SUB
                         case "SUB":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SUB);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.SUB);
                             programAdress++;
                             break;
                         #endregion
                         #region MUX
                         case "MUX":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.MUX);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.MUX);
                             programAdress++;
                             break;
                         #endregion
                         #region DIV
                         case "DIV":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.DIV);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.DIV);
                             programAdress++;
                             break;
                         #endregion
@@ -260,25 +363,26 @@ namespace CPU_Concept
                                 switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                                        WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
                                         programAdress++;
                                         break;
                                     case "B":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 1);
+                                        WriteMemory(programAdress, 1);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                                        WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
                                         programAdress++;
                                         break;
                                     default:
                                         break;
                                 }
-                            } else
+                            }
+                            else
                             {
                                 Console.WriteLine("Missing or incorrect register in entry.");
                                 break;
@@ -297,23 +401,24 @@ namespace CPU_Concept
                                 switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                                        WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
                                         programAdress++;
                                         break;
                                     case "B":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 1);
+                                        WriteMemory(programAdress, 1);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                                        WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
                                         programAdress++;
                                         break;
                                 }
-                            } else
+                            }
+                            else
                             {
                                 Console.WriteLine("Missing or incorrect register in entry.");
                                 break;
@@ -322,13 +427,13 @@ namespace CPU_Concept
                         #endregion
                         #region WAIT
                         case "WAIT":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.WAIT);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.WAIT);
                             programAdress++;
                             break;
                         #endregion
                         #region HALT
                         case "HALT":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.HALT);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.HALT);
                             programAdress++;
                             break;
                         #endregion
@@ -344,19 +449,20 @@ namespace CPU_Concept
                                 switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
                                         break;
                                     case "B":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
                                         break;
                                 }
-                            } else
+                            }
+                            else
                             {
                                 Console.WriteLine("Missing or incorrect register in entry.");
                                 break;
@@ -375,19 +481,20 @@ namespace CPU_Concept
                                 switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
                                         break;
                                     case "B":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 1);
+                                        WriteMemory(programAdress, 1);
                                         programAdress++;
                                         break;
                                 }
-                            } else
+                            }
+                            else
                             {
                                 Console.WriteLine("Missing or incorrect register in entry.");
                                 break;
@@ -396,12 +503,12 @@ namespace CPU_Concept
                         #endregion
                         #region Counter Decrement
                         case "CDE":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.CDE);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.CDE);
                             break;
                         #endregion
                         #region Counter Increment
                         case "CIN":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.CIN);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.CIN);
                             break;
                         #endregion
                         #region JMP
@@ -411,7 +518,7 @@ namespace CPU_Concept
                                 Console.WriteLine("Missing register in entry.");
                                 break;
                             }
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.JMP);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.JMP);
                             programAdress++;
                             _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
                             programAdress++;
@@ -429,19 +536,19 @@ namespace CPU_Concept
                                 switch (_splitBiosInput[2].ToUpper())
                                 {
                                     case "A":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
                                         programAdress++;
                                         _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
                                         programAdress += 2;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
                                         break;
                                     case "B":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
                                         programAdress++;
                                         _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
                                         programAdress += 2;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
                                         break;
                                 }
@@ -465,23 +572,24 @@ namespace CPU_Concept
                                 switch (_splitBiosInput[1].ToUpper())
                                 {
                                     case "A":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 0);
+                                        WriteMemory(programAdress, 0);
                                         programAdress++;
                                         _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
                                         programAdress += 2;
                                         break;
                                     case "B":
-                                        systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
+                                        WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
                                         programAdress++;
-                                        systemCPU.WriteMemory(programAdress, 1);
+                                        WriteMemory(programAdress, 1);
                                         programAdress++;
                                         _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
                                         programAdress += 2;
                                         break;
                                 }
-                            } else
+                            }
+                            else
                             {
                                 Console.WriteLine("Missing or incorrect register in entry.");
                                 break;
@@ -490,10 +598,10 @@ namespace CPU_Concept
                         #endregion
                         #region Reset
                         case "RST":
-                            systemCPU.WriteMemory(programAdress, (int)CPU.InstructionSet.RST);
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.RST);
                             programAdress++;
                             break;
-#endregion
+                        #endregion
                         default:
                             Console.WriteLine("Unknown command.");
                             break;
@@ -504,40 +612,48 @@ namespace CPU_Concept
 
                 }
             }
-            systemCPU.WriteMemory(0, (byte)programAdress);
+            WriteMemory(0, (byte)programAdress);
         }
 
         public void DoDumpRegisters()
         {
-            Console.WriteLine("Dumping CPU registers.");
-            Console.Write("Program counter: " + systemCPU.HaltRegisters[0] + "\t");
-            Console.Write("Instruction: " + systemCPU.HaltRegisters[1] + "\r\n");
-            Console.Write("Adress: " + systemCPU.Adress + "\t");
-            Console.Write("Adress in range: " + systemCPU.IndexOutOfRange + "\t");
-            Console.Write("Counter: " + systemCPU.HaltRegisters[7] + "\r\n");
-            Console.Write("A: " + systemCPU.HaltRegisters[2] + "dec" + "\t");
-            Console.Write("B: " + systemCPU.HaltRegisters[3] + "dec" + "\t");
-            Console.Write("Temporary register: " + systemCPU.HaltRegisters[4] + "\r\n");
-            Console.Write("Overflow: " + systemCPU.HaltRegisters[5] + "\t\t");
-            Console.Write("Underflow: " + systemCPU.HaltRegisters[6] + "\r\n");
-            Console.WriteLine("Dumping memory:");
-            for (int i = 1; i < systemCPU.ProgramMemorySize; i++)
+            int lineNumber = 0;
+            string[] LinesToWrite = new string[11];
+            LinesToWrite[0] = "Dumping CPU registers.";
+            LinesToWrite[1] = "Program counter: " + systemCPU.HaltRegisters[0];
+            LinesToWrite[2] = "Instruction: " + systemCPU.HaltRegisters[1];
+            LinesToWrite[3] = "Adress: " + systemCPU.Adress;
+            LinesToWrite[4] = "Adress in range: " + systemCPU.IndexOutOfRange;
+            LinesToWrite[5] = "Counter: " + systemCPU.HaltRegisters[7];
+            LinesToWrite[6] = "A: " + systemCPU.HaltRegisters[2] + "dec";
+            LinesToWrite[7] = "B: " + systemCPU.HaltRegisters[3] + "dec";
+            LinesToWrite[8] = "Temporary register: " + systemCPU.HaltRegisters[4];
+            LinesToWrite[9] = "Overflow: " + systemCPU.HaltRegisters[5];
+            LinesToWrite[10] = "Underflow: " + systemCPU.HaltRegisters[6];
+
+            foreach (string LineToWrite in LinesToWrite)
             {
-                Console.Write(systemCPU.ReadMemory(i - 1).ToString("x2"));
-                if (i % 30 == 0)
-                {
-                    Console.Write("\r\n");
-                }
-                else if (i % 2 == 0)
-                {
-                    Console.Write(":");
-                }
+                systemMemory.WriteMemSequence(_graphicsMemoryFirstByte + lineNumber , DoCreateByteArray(LineToWrite));
+                lineNumber += 80;
             }
+            //Console.WriteLine("Dumping memory:");
+            //for (int i = 1; i < ProgramMemorySize; i++)
+            //{
+            //    Console.Write(ReadMemory(i - 1).ToString("x2"));
+            //    if (i % 30 == 0)
+            //    {
+            //        Console.Write("\r\n");
+            //    }
+            //    else if (i % 2 == 0)
+            //    {
+            //        Console.Write(":");
+            //    }
+            //}
         }
 
         private void _writeAdress(int Adress, int ProgramAdress)
         {
-            //systemCPU.WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+            //WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
             int mostSignificant = 0;
             int leastSignificant = 0;
             if (Adress > 255)
@@ -550,13 +666,89 @@ namespace CPU_Concept
                 mostSignificant = 0;
                 leastSignificant = Adress;
             }
-            systemCPU.WriteMemory(ProgramAdress, (byte)mostSignificant);
-            systemCPU.WriteMemory(ProgramAdress  + 1, (byte)leastSignificant);
+            WriteMemory(ProgramAdress, (byte)mostSignificant);
+            WriteMemory(ProgramAdress + 1, (byte)leastSignificant);
+        }
+
+        private byte[] DoCreateByteArray(string TextToConvert)
+        {
+            byte[] _returnText = new byte[TextToConvert.Length];
+            int i = 0;
+            foreach (byte character in TextToConvert)
+            {
+                _returnText[i] = character;
+                i++;
+            }
+            return _returnText;
         }
 
         public void DoExitBios()
         {
             _inInterpreter = false;
+        }
+
+        public void GraphicsTest()
+        {
+            int address = 256;
+            byte[] byteToWrite = { 84, 101, 115, 116, 32 };
+            int bytecounter = 0;
+            Console.SetCursorPosition(0, 0);
+            for (int i = 0; i < _graphicsMemorySize; i++)
+            {
+                systemMemory.WriteMemByte(address, byteToWrite[bytecounter]);
+                if (bytecounter == 4)
+                {
+                    bytecounter = 0;
+                }
+                else
+                {
+                    bytecounter++;
+                }
+                address++;
+            }
+        }
+
+        public void Draw(SpriteBatch spriteBatch, SpriteFont Font, int ScreenWidth, int ScreenHeight)
+        {
+            byte[] screenMem = systemMemory.ReadMemSequence(_ProgramMemorySize, _graphicsMemorySize);
+
+            int characterCounter = 1;
+            int currentLine = 0;
+            char printCharacter;
+            string ScreenString = "";
+            foreach (char character in screenMem)
+            {
+                if (characterCounter == _charactersPerLine)
+                {
+                    spriteBatch.DrawString(Font, ScreenString, new Vector2(0, currentLine), Color.Green);
+                    ScreenString = "";
+                    characterCounter = 1;
+                    currentLine += ScreenHeight / _linesPerScreen;
+                }
+                else
+                {
+                    if (!Font.Characters.Contains(character))
+                    {
+                        printCharacter = ' ';
+                    } else
+                    {
+                        printCharacter = character;
+                    }
+                    ScreenString = ScreenString + printCharacter;
+                    characterCounter++;
+                }
+            }
+            
+
+            // Too Slow!
+            //for (int memPosition = 0; memPosition < _graphicsMemorySize; memPosition++)
+            //{
+            //    try
+            //    {
+            //        spriteBatch.DrawString(Font, Convert.ToString((char)screenMem[memPosition]), new Vector2((memPosition % 80) * (ScreenWidth / _charactersPerLine), (memPosition / 80) * (ScreenHeight / _linesPerScreen)), Color.Green);
+            //        } catch (Exception)
+            //        { }
+            //}
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CPU_Concept
+namespace Hacking_Game
 {
     class CPU_Registers
     {
@@ -12,11 +12,12 @@ namespace CPU_Concept
             try
             {
                 return BitConverter.ToInt32(_register, 0);
-            } catch (Exception)
+            }
+            catch (Exception)
             {
                 return 0;
             }
-            
+
         }
         public void WriteRegister(int DataToWrite)
         {

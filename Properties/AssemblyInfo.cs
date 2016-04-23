@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("CPU_Concept")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Hacking-Game")]
+[assembly: AssemblyProduct("Hacking-Game")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("One Third Off Gaming")]
-[assembly: AssemblyProduct("CPU_Concept")]
-[assembly: AssemblyCopyright("Copyright © One Third Off Gaming 2016")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("65602e93-51ea-4b98-b086-1081bb560ac6")]
+[assembly: Guid("5786f960-7162-4625-91e2-6a2aa4bf4017")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -29,4 +29,8 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("0.1.63.*")]
+// You can specify all the values or you can default the Build and Revision Numbers 
+// by using the '*' as shown below:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("3.4.0.456")]
+[assembly: AssemblyFileVersion("3.4.0.456")]

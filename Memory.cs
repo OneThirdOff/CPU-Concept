@@ -1,8 +1,8 @@
 ﻿using System.Linq;
 
-namespace CPU_Concept
+namespace Hacking_Game
 {
-    class Memory
+    public class Memory
     {
         private byte[] _memory;
         private int _memorySize;

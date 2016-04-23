@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CPU_Concept
+namespace Hacking_Game
 {
     class CPU
     {
@@ -13,11 +13,8 @@ namespace CPU_Concept
         private CPU_Registers _counter;
         private CPU_Registers _programCounter;
         private int _programLength;
-        private Memory _ProgramMemory;
         private string[] _haltRegisters;
-        private int _graphicsMemory;
-        private int _programMemorySize;
-        
+
         //Flags
         private bool _overFlow;
         private bool _underFlow;
@@ -31,50 +28,6 @@ namespace CPU_Concept
         public int Counter { get { return _counter.ReadRegister(); } }
         public int Adress { get { return _adressBus; } }
         public string[] HaltRegisters { get { return _haltRegisters; } }
-
-        /// <summary>
-        /// Writes a byte to memory, for BIOS-access to memory
-        /// </summary>
-        /// <param name="Adress">Int, Memory-adress you want to write to.</param>
-        /// <param name="ByteToWrite">Byte-value to write.</param>
-        public void WriteMemory(int Adress, byte ByteToWrite)
-        {
-            _ProgramMemory.WriteMemByte(Adress, ByteToWrite);
-        }
-
-        /// <summary>
-        /// Read byte from memory. For BIOS-access to memory.
-        /// </summary>
-        /// <param name="Adress">Adress to read from.</param>
-        /// <returns></returns>
-        public int ReadMemory(int Adress)
-        {
-            return _ProgramMemory.ReadMemByte(Adress);
-        }
-        /// <summary>
-        /// Reads byte-array from memory. For BIOS-access to memory.
-        /// </summary>
-        /// <param name="Address">Adress to start to read from.</param>
-        /// <param name="Length">Length specifies how many bytes to read.</param>
-        /// <returns></returns>
-        public int[] ReadMemory(int Address, int Length)
-        {
-            int[] returnBytes = new int[Length];
-            for (int i = Address; i < Length; i++)
-            {
-                returnBytes[Address] = ReadMemory(Address);
-            }
-
-            return returnBytes;
-        }
-        /// <summary>
-        /// Returns size of cpu-memory.
-        /// </summary>
-        public int MemorySize { get { return _ProgramMemory.MemorySize; } }
-        /// <summary>
-        /// Returns size of program-allocatable memory.
-        /// </summary>
-        public int ProgramMemorySize { get { return _programMemorySize; } }
 
         //Flags
         public bool Overflow { get { return this._overFlow; } }
@@ -106,9 +59,6 @@ namespace CPU_Concept
         /// <param name="NumberOfRegisters">Number specifies number of accessable registers on CPU.</param>
         public CPU(int BusWidth, int AddressBusWidth, int NumberOfRegisters)
         {
-            this._ProgramMemory = new Memory(2256);
-            this._graphicsMemory = 2000;
-            this._programMemorySize = this._ProgramMemory.MemorySize - _graphicsMemory;
             this._counter = new CPU_Registers(AddressBusWidth);
             this._programCounter = new CPU_Registers(AddressBusWidth);
             this._tempRegister = new CPU_Registers(BusWidth * 2);
@@ -121,7 +71,7 @@ namespace CPU_Concept
             {
                 _registers.Add(new CPU_Registers(BusWidth));
             }
-            
+
         }
 
         /// <summary>
@@ -133,7 +83,7 @@ namespace CPU_Concept
             this._underFlow = false;
             this._halt = false;
             this._programCounter.WriteRegister(1);
-            this._programLength = _ProgramMemory.ReadMemByte(0);
+            //this._programLength = Game1.systemBios.systemMemory.ReadMemByte(0);
         }
         /// <summary>
         /// Does an initialization of the CPU.
@@ -172,7 +122,7 @@ namespace CPU_Concept
 
         private int GetAdress(int ProgramAdress)
         {
-            return (_ProgramMemory.ReadMemByte(ProgramAdress) * 255) + _ProgramMemory.ReadMemByte(ProgramAdress + 1);
+            return (Game1.systemBios.systemMemory.ReadMemByte(ProgramAdress) * 255) + Game1.systemBios.systemMemory.ReadMemByte(ProgramAdress + 1);
         }
         /// <summary>
         /// Checks if the adress is in range of the memory.
@@ -219,7 +169,7 @@ namespace CPU_Concept
         /// <param name="RegisterNumber">Adress of the RegisterNumber in ProgramMemory</param>
         private void DoMove(int DataAdress, int RegisterNumber)
         {
-            _registers[_ProgramMemory.ReadMemByte(RegisterNumber)].WriteRegister(_ProgramMemory.ReadMemByte(DataAdress));
+            _registers[Game1.systemBios.systemMemory.ReadMemByte(RegisterNumber)].WriteRegister(Game1.systemBios.systemMemory.ReadMemByte(DataAdress));
         }
 
         /// <summary>
@@ -230,19 +180,19 @@ namespace CPU_Concept
         {
             if (_tempRegister.ReadRegister() < 0)
             {
-                _registers[_ProgramMemory.ReadMemByte(RegisterNumber)].WriteRegister(0);
+                _registers[Game1.systemBios.systemMemory.ReadMemByte(RegisterNumber)].WriteRegister(0);
                 _underFlow = true;
                 DoCrash();
             }
             else if (_tempRegister.ReadRegister() > _registers[1].MaxValue)
             {
-                _registers[_ProgramMemory.ReadMemByte(RegisterNumber)].WriteRegister(255);
+                _registers[Game1.systemBios.systemMemory.ReadMemByte(RegisterNumber)].WriteRegister(255);
                 _overFlow = true;
                 DoCrash();
             }
             else
             {
-                _registers[_ProgramMemory.ReadMemByte(RegisterNumber)].WriteRegister((byte)_tempRegister.ReadRegister());
+                _registers[Game1.systemBios.systemMemory.ReadMemByte(RegisterNumber)].WriteRegister((byte)_tempRegister.ReadRegister());
                 _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
             }
         }
@@ -253,10 +203,10 @@ namespace CPU_Concept
         /// <param name="RegisterNumber">Adress of the RegisterNumber in ProgramMemory</param>
         private void DoRead(int RegisterNumber)
         {
-            _tempRegister.WriteRegister(_registers[_ProgramMemory.ReadMemByte(RegisterNumber)].ReadRegister());
+            _tempRegister.WriteRegister(_registers[Game1.systemBios.systemMemory.ReadMemByte(RegisterNumber)].ReadRegister());
             _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
         }
-        
+
         private void DoAdd()
         {
             _tempRegister.WriteRegister(_registers[0].ReadRegister() + _registers[1].ReadRegister());
@@ -277,7 +227,7 @@ namespace CPU_Concept
             else
             {
                 _tempRegister.WriteRegister(_registers[0].ReadRegister());
-             }
+            }
             while (_counter.ReadRegister() > 0)
             {
                 _registers[1].WriteRegister(_tempRegister.ReadRegister());
@@ -300,11 +250,12 @@ namespace CPU_Concept
             bool _isNegative = false;
             int _counterValue = _registers[RegisterNumber].ReadRegister();
             int newValue = _counterValue - 1;
-            if (newValue < 0 )
+            if (newValue < 0)
             {
                 _isNegative = true;
                 _registers[RegisterNumber].WriteRegister(0);
-            } else
+            }
+            else
             {
                 _registers[RegisterNumber].WriteRegister(_counterValue - 1);
             }
@@ -382,12 +333,12 @@ namespace CPU_Concept
         }
         private void DoShiftLeft()
         {
-            _registers[_ProgramMemory.ReadMemByte(_programCounter.ReadRegister())].WriteRegister(_registers[_ProgramMemory.ReadMemByte(_programCounter.ReadRegister())].ReadRegister() << _ProgramMemory.ReadMemByte(_programCounter.ReadRegister() + 1));
+            _registers[Game1.systemBios.systemMemory.ReadMemByte(_programCounter.ReadRegister())].WriteRegister(_registers[Game1.systemBios.systemMemory.ReadMemByte(_programCounter.ReadRegister())].ReadRegister() << Game1.systemBios.systemMemory.ReadMemByte(_programCounter.ReadRegister() + 1));
             _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
         }
         private void DoShiftRight()
         {
-            _registers[_ProgramMemory.ReadMemByte(_programCounter.ReadRegister())].WriteRegister(_registers[_ProgramMemory.ReadMemByte(_programCounter.ReadRegister())].ReadRegister() >> _ProgramMemory.ReadMemByte(_programCounter.ReadRegister() + 1));
+            _registers[Game1.systemBios.systemMemory.ReadMemByte(_programCounter.ReadRegister())].WriteRegister(_registers[Game1.systemBios.systemMemory.ReadMemByte(_programCounter.ReadRegister())].ReadRegister() >> Game1.systemBios.systemMemory.ReadMemByte(_programCounter.ReadRegister() + 1));
             _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
         }
         /// <summary>
@@ -404,10 +355,11 @@ namespace CPU_Concept
         /// <param name="AdressToJumpTo"></param>
         private void DoJumpIfZero(int AdressToJumpTo, int JumpCondition)
         {
-            if (_ProgramMemory.ReadMemByte(JumpCondition) == 0)
+            if (Game1.systemBios.systemMemory.ReadMemByte(JumpCondition) == 0)
             {
                 _programCounter.WriteRegister(AdressToJumpTo);
-            } else
+            }
+            else
             {
                 _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
             }
@@ -420,7 +372,7 @@ namespace CPU_Concept
         /// <param name="AdressToWriteTo"></param>
         private void DoStore(int RegisterToReadFrom, int AdressToWriteTo)
         {
-            _ProgramMemory.WriteMemByte(AdressToWriteTo, (byte)_registers[RegisterToReadFrom].ReadRegister());
+            Game1.systemBios.systemMemory.WriteMemByte(AdressToWriteTo, (byte)_registers[RegisterToReadFrom].ReadRegister());
         }
 
         /// <summary>
@@ -430,7 +382,7 @@ namespace CPU_Concept
         /// <param name="RegisterToWriteTo"></param>
         private void DoLoad(int AdressToReadFrom, int RegisterToWriteTo)
         {
-            _registers[RegisterToWriteTo].WriteRegister(_ProgramMemory.ReadMemByte(AdressToReadFrom));
+            _registers[RegisterToWriteTo].WriteRegister(Game1.systemBios.systemMemory.ReadMemByte(AdressToReadFrom));
         }
         #endregion
         #endregion
@@ -442,11 +394,11 @@ namespace CPU_Concept
         /// </summary>
         public void Update()
         {
-            _instructionRegister.WriteRegister(_ProgramMemory.ReadMemByte(_programCounter.ReadRegister()));
+            _instructionRegister.WriteRegister(Game1.systemBios.systemMemory.ReadMemByte(_programCounter.ReadRegister()));
             _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
-            
+
             switch ((InstructionSet)_instructionRegister.ReadRegister())
-                {
+            {
                 case InstructionSet.NOP:
                     DoNoP();
                     break;
@@ -490,7 +442,7 @@ namespace CPU_Concept
                     DoReset();
                     break;
                 case InstructionSet.DEC:
-                    _adressBus= GetAdress(_programCounter.ReadRegister());
+                    _adressBus = GetAdress(_programCounter.ReadRegister());
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
                     DoDec(_adressBus);
                     break;
@@ -508,61 +460,27 @@ namespace CPU_Concept
                 case InstructionSet.LOAD:
                     _adressBus = GetAdress(_programCounter.ReadRegister());
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
-                    DoLoad(_adressBus, _ProgramMemory.ReadMemByte(_programCounter.ReadRegister()));
+                    DoLoad(_adressBus, Game1.systemBios.systemMemory.ReadMemByte(_programCounter.ReadRegister()));
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 1);
                     break;
                 case InstructionSet.STORE:
-                    _adressBus= GetAdress(_programCounter.ReadRegister() + 1);
-                    DoStore(_ProgramMemory.ReadMemByte(_programCounter.ReadRegister()), _adressBus);
+                    _adressBus = GetAdress(_programCounter.ReadRegister() + 1);
+                    DoStore(Game1.systemBios.systemMemory.ReadMemByte(_programCounter.ReadRegister()), _adressBus);
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
                     break;
                 case InstructionSet.JMP:
-                    _adressBus= GetAdress(_programCounter.ReadRegister());
+                    _adressBus = GetAdress(_programCounter.ReadRegister());
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
                     DoJump(_adressBus);
                     break;
                 case InstructionSet.JZ:
-                    _adressBus= GetAdress(_programCounter.ReadRegister());
+                    _adressBus = GetAdress(_programCounter.ReadRegister());
                     _programCounter.WriteRegister(_programCounter.ReadRegister() + 2);
                     DoJumpIfZero(_adressBus, GetAdress(_programCounter.ReadRegister()));
                     break;
                 default:
                     DoUnknownOp();
                     break;
-            }
-        }
-
-        public void GraphicsTest()
-        {
-            int address = 256;
-            byte[] byteToWrite = { 84, 101, 115, 116, 32 };
-            int bytecounter = 0;
-            Console.SetCursorPosition(0, 0);
-            for (int i = 0; i < _graphicsMemory; i ++)
-            {
-                _ProgramMemory.WriteMemByte(address, byteToWrite[bytecounter]);
-                if (bytecounter == 4)
-                {
-                    bytecounter = 0;
-                } else
-                {
-                    bytecounter++;
-                }
-                address++;
-            }
-        }
-
-        /// <summary>
-        /// Draws the content of the graphics-part of memory to the screen.
-        /// </summary>
-        public void Draw()
-        {
-            
-            byte[] screenMem = _ProgramMemory.ReadMemSequence(100, 2000);
-            Console.SetCursorPosition(0, 0);
-            foreach (int ByteToWrite in screenMem)
-            {
-                Console.Write(Convert.ToChar(ByteToWrite));
             }
         }
         #endregion
