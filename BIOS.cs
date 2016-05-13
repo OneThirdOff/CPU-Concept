@@ -17,17 +17,25 @@ namespace Hacking_Game
         private int _graphicsMemoryFirstByte;
         private string _screenCharacters;
         private byte[] _screenBytes;
+        private bool _collectingLine;
+        private int _currentScreenLine;
+        private int _codeLineNumber = 0;
+        private int programAdress = 1;
+
+        private KeyboardState OldKeyboardState;
+        private KeyboardState NewKeyboardState;
+        private string KeyboardInputLine;
 
         private int _charactersPerLine = 80;
         private int _linesPerScreen = 25;
 
         string _biosInput;
-        string[] _splitBiosInput;
 
         public bool InBios { get { return _inInterpreter; } }
         public byte[] ProgramToRun { get { return _programToRun; } }
         public bool CPUFault { get { return systemCPU.Fault; } }
         public Memory systemMemory;
+        public Memory graphicsMemory;
         public enum ScreenLines
         {
             Line1 = 0,
@@ -59,18 +67,20 @@ namespace Hacking_Game
 
         public Version version;
 
-        public BIOS(int BusWidth, int AddressBusWidth, int NumberOfRegisters, int MemorySize, int ReservedMemForGraphics)
+        public BIOS(int BusWidth, int AddressBusWidth, int NumberOfRegisters, int MemorySize)
         {
+            _collectingLine = false;
             version = Assembly.GetEntryAssembly().GetName().Version;
             systemCPU = new CPU(BusWidth, AddressBusWidth, NumberOfRegisters);
             systemMemory = new Memory(MemorySize);
-            _graphicsMemorySize = ReservedMemForGraphics;
-            _ProgramMemorySize = MemorySize - ReservedMemForGraphics;
-            _graphicsMemoryFirstByte = _ProgramMemorySize;
-
+            graphicsMemory = new Memory(2000);
+            _currentScreenLine = 0;
+            
             systemCPU.Initialize();
             _inInterpreter = true;
-            checkCPU();
+            checkMemory();
+            DoBiosPostInfo();
+            DoStartInterpreter();
         }
 
         #region Memory-handling
@@ -84,6 +94,25 @@ namespace Hacking_Game
             systemMemory.WriteMemByte(Adress, ByteToWrite);
         }
 
+        private void _writeAdress(int Adress, int ProgramAdress)
+        {
+            //WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+            int mostSignificant = 0;
+            int leastSignificant = 0;
+            if (Adress > 255)
+            {
+                mostSignificant = Adress / 255;
+                leastSignificant = Adress % 255;
+            }
+            else
+            {
+                mostSignificant = 0;
+                leastSignificant = Adress;
+            }
+            WriteMemory(ProgramAdress, (byte)mostSignificant);
+            WriteMemory(ProgramAdress + 1, (byte)leastSignificant);
+        }
+
         /// <summary>
         /// Read byte from memory.
         /// </summary>
@@ -93,7 +122,6 @@ namespace Hacking_Game
         {
             return systemMemory.ReadMemByte(Adress);
         }
-
         /// <summary>
         /// Reads byte-array from memory.
         /// </summary>
@@ -109,7 +137,6 @@ namespace Hacking_Game
             }
             return returnBytes;
         }
-
         /// <summary>
         /// Returns size of cpu-memory.
         /// </summary>
@@ -118,16 +145,15 @@ namespace Hacking_Game
         /// Returns size of program-allocatable memory.
         /// </summary>
         public int ProgramMemorySize { get { return _ProgramMemorySize; } }
-        #endregion
 
-        private void checkCPU()
+        private void checkMemory()
         {
             for (int i = 0; i < systemMemory.MemorySize; i++)
             {
                 WriteMemory(i, 255);
                 if (ReadMemory(i) != 255)
                 {
-                    DoCPUFault(i);
+                    DoMemoryFault(i);
                     break;
                 }
                 WriteMemory(i, 0);
@@ -135,484 +161,527 @@ namespace Hacking_Game
             }
             WriteMemory(0, 255); //throw in a HALT as the first byte in the memory. That way if you start the cpu without software it just stops.
         }
-
-        public void DoCPUFault(int FaultAddress)
+        public void DoMemoryFault(int FaultAddress)
         {
             systemCPU.SetFault();
             _inInterpreter = false;
-            Console.WriteLine("CPU Fault at " + FaultAddress);
-            Console.WriteLine(systemCPU.HaltRegisters);
+            WriteToScreen("CPU Fault at " + FaultAddress, _currentScreenLine);
+        }
+        #endregion
+
+        public void Update(GameTime gameTime)
+        {
+            DoRunningInterpreter();
+
+            NewKeyboardState = Keyboard.GetState();
+            Keys[] CurrentKey = NewKeyboardState.GetPressedKeys();
+
+            if (NewKeyboardState.IsKeyUp(Keys.Enter))
+            {
+                _collectingLine = false;
+                DoRunInterpreter(KeyboardInputLine);
+                KeyboardInputLine = "";
+            } else
+            {
+                if (NewKeyboardState.IsKeyUp(CurrentKey[0]))
+                {
+                    KeyboardInputLine = KeyboardInputLine + CurrentKey[0].ToString();
+                }
+            }
+
+            OldKeyboardState = NewKeyboardState;
         }
 
-        public void Update()
-        {
-            //fill with fancy!
-            //DoRunInterpreter();
+        //public void RunBios()
+        //{
+        //    DoBiosPostInfo();
             
-        }
-
-        public void RunBios()
-        {
-            Console.WriteLine("BIOS " + version + " Loaded.");
-            DoRunInterpreter();
-
-            while (!systemCPU.Halt)
-            {
-                systemCPU.Update();
+        //    while (!systemCPU.Halt)
+        //    {
+        //        systemCPU.Update();
                 
-                if (systemCPU.Reset)
-                {
-                    RunBios();
-                }
-            }
-            Console.WriteLine("Dump registers? y/n ");
-            string getResponse = Console.ReadLine();
-            if (getResponse.ToUpper().Equals("Y") || getResponse.Equals(""))
-            {
-                DoDumpRegisters();
-            }
-            Console.WriteLine("\r\nSystem halted.");
+        //        if (systemCPU.Reset)
+        //        {
+        //            RunBios();
+        //        }
+        //    }
+        //    WriteLine("Dump registers? y/n ");
+        //    string getResponse = Console.ReadLine();
+        //    if (getResponse.ToUpper().Equals("Y") || getResponse.Equals(""))
+        //    {
+        //        DoDumpRegisters();
+        //    }
+        //    Console.WriteLine("\r\nSystem halted.");
+        //}
+
+        public void DoBiosPostInfo()
+        {
+            WriteToScreen("BIOS " + version + " Loaded.", _currentScreenLine);
+            _currentScreenLine++;
         }
 
-        public void DoRunInterpreter()
+        public void DoStartInterpreter()
         {
-            Console.WriteLine("Program 1 operation per line. '?' for help.");
-            int programAdress = 1;
-            int _lineNumber = 0;
+            WriteToScreen("Program 1 operation per line. '?' for help.", _currentScreenLine);
+            _currentScreenLine++;
+        }
+
+        public void DoRunningInterpreter()
+        {
+            if (!_collectingLine)
+            {
+                WriteToScreen(programAdress + ": ", _currentScreenLine);
+                _collectingLine = true;
+            }
+        }
+
+        public void DoRunInterpreter(string LineToInterpret)
+        {
+            string[] _splitBiosInput = new string[3];
+            for (int j = 0; j < _splitBiosInput.Length; j++)
+            {
+                _splitBiosInput[j] = "";
+            }
+            //ScreenLines LineNumber = (ScreenLines)_codeLineNumber;
             
-            while (InBios)
+            _splitBiosInput = LineToInterpret.Split(' ');
+            if (_splitBiosInput[0].ToUpper().Equals("RUN"))
             {
-                _lineNumber = 1;
-                _splitBiosInput = new string[3];
-                for (int j = 0; j < _splitBiosInput.Length; j++)
+                _inInterpreter = false;
+            }
+            else if (_splitBiosInput[0].Equals("?"))
+            {
+                WriteToScreen("CPU Operation-codes and usage. Valid registers are A and B.", 0);
+                WriteToScreen("NOP - No Operation.", 1);
+                WriteToScreen("MOV [value] [register] - Moves the value into the named register.", 2);
+                WriteToScreen("SAVE [register] - Saves the value from temp-register to the register.", 3);
+                WriteToScreen("READ [register] - Reads the value from the register, saves to temp-register.", 4);
+                WriteToScreen("ADD - Adds register A and B and stores the result to the temp-register.", 5);
+                WriteToScreen("SUB - Subrtracts register B from register A, saves to temp-register.", 6);
+                WriteToScreen("MUX - Multiplies register A by register B, saves to temp-register. Writes to register B while multiplying", 7);
+                WriteToScreen("DIV - Divides register A by register B, saves to temp-register.", 8);
+                WriteToScreen("SHL [register] [amount] - Shift the register [amount] times to the left.", 9);
+                WriteToScreen("SHR [register] [amount] - Shift the register [amount] times to the right.", 10);
+                WriteToScreen("DEC/INC [register] - Decrements or Increments the register by one.", 11);
+                WriteToScreen("CDE, CIN - Decrements or Increments the counter by one.", 12);
+                WriteToScreen("JMP [address] - Jumps to the address of the memory.", 13);
+                WriteToScreen("JZ [address to jump to] [address to check if zero] - jumps if checked is zero.", 14);
+                WriteToScreen("LOAD [address] [register] - Loads the value in the memory address to the register", 15);
+                WriteToScreen("STORE [register] [address] - Stores the value in the register to the memory.", 16);
+                WriteToScreen("HALT - Halts the cpu. At the moment, the only way to stop the program.", 16);
+                WriteToScreen("RUN - runs the program.", 17);
+                _currentScreenLine = 18;
+            }
+            else if (!_splitBiosInput[0].Equals(""))
+            {
+                switch (_splitBiosInput[0].ToUpper())
                 {
-                    _splitBiosInput[j] = "";
-                }
-                ScreenLines LineNumber = (ScreenLines)_lineNumber;
-                systemMemory.WriteMemSequence((int)LineNumber, DoCreateByteArray(": "));
-                
-                _biosInput = Console.ReadLine();
-                _splitBiosInput = _biosInput.Split(' ');
-                if (_splitBiosInput[0].ToUpper().Equals("RUN"))
-                {
-                    _inInterpreter = false;
-                }
-                else if (_splitBiosInput[0].Equals("?"))
-                {
-                    Console.WriteLine("CPU Operation-codes and usage. Valid registers are A and B.");
-                    Console.WriteLine("NOP - No Operation.");
-                    Console.WriteLine("MOV [value] [register] - Moves the value into the named register.");
-                    Console.WriteLine("SAVE [register] - Saves the value from temp-register to the register.");
-                    Console.WriteLine("READ [register] - Reads the value from the register, saves to temp-register.");
-                    Console.WriteLine("ADD - Adds register A and B and stores the result to the temp-register.");
-                    Console.WriteLine("SUB - Subrtracts register B from register A, saves to temp-register.");
-                    Console.WriteLine("MUX - Multiplies register A by register B, saves to temp-register. Writes to register B while multiplying");
-                    Console.WriteLine("DIV - Divides register A by register B, saves to temp-register.");
-                    Console.WriteLine("SHL [register] [amount] - Shift the register [amount] times to the left.");
-                    Console.WriteLine("SHR [register] [amount] - Shift the register [amount] times to the right.");
-                    Console.WriteLine("DEC/INC [register] - Decrements or Increments the register by one.");
-                    Console.WriteLine("CDE, CIN - Decrements or Increments the counter by one.");
-                    Console.WriteLine("JMP [address] - Jumps to the address of the memory.");
-                    Console.WriteLine("JZ [address to jump to] [address to check if zero] - jumps if checked is zero.");
-                    Console.WriteLine("LOAD [address] [register] - Loads the value in the memory address to the register");
-                    Console.WriteLine("STORE [register] [address] - Stores the value in the register to the memory.");
-                    Console.WriteLine("HALT - Halts the cpu. At the moment, the only way to stop the program.");
-                    Console.WriteLine("RUN - runs the program.");
-                }
-                else if (!_splitBiosInput[0].Equals(""))
-                {
-                    switch (_splitBiosInput[0].ToUpper())
-                    {
-                        #region NoP
-                        case "NOP":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.NOP);
-                            programAdress++;
+                    #region NoP
+                    case "NOP":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.NOP);
+                        programAdress++;
+                        break;
+                    #endregion
+                    #region MOV
+                    case "MOV":
+                        if (_splitBiosInput.Length < 3)
+                        {
+                            WriteToScreen("Missing value and/or register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region MOV
-                        case "MOV":
-                            if (_splitBiosInput.Length < 3)
-                            {
-                                Console.WriteLine("Missing value and/or register in entry.");
-                                break;
-                            }
+                        }
 
-                            if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
-                            {
-                                WriteMemory(programAdress, (int)CPU.InstructionSet.MOV);
-                                programAdress++;
-                                WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
-                                programAdress++;
+                        if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
+                        {
+                            WriteMemory(programAdress, (int)CPU.InstructionSet.MOV);
+                            programAdress++;
+                            WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[1]));
+                            programAdress++;
 
-                                switch (_splitBiosInput[2].ToUpper())
-                                {
-                                    case "A":
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        break;
-                                    case "B":
-                                        WriteMemory(programAdress, 1);
-                                        programAdress++;
-                                        break;
-                                    default:
-                                        Console.WriteLine("Incorrect register in entry.");  //Error message if you try to write to a non-existent register
-                                        programAdress -= 2;                                 //and moves programAdress back to previous state
-                                        break;
-                                }
+                            switch (_splitBiosInput[2].ToUpper())
+                            {
+                                case "A":
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    break;
+                                case "B":
+                                    WriteMemory(programAdress, 1);
+                                    programAdress++;
+                                    break;
+                                default:
+                                    WriteToScreen("Incorrect register in entry.", _currentScreenLine);  //Error message if you try to write to a non-existent register
+                                    _currentScreenLine++;
+                                    programAdress -= 2;                                 //and moves programAdress back to previous state
+                                    break;
                             }
-                            //} else  //do we even need this anymore?
-                            //{
-                            //    Console.WriteLine("Missing register in entry.");
-                            //    break;
-                            //}
+                        }
+                        //} else  //do we even need this anymore?
+                        //{
+                        //    Console.WriteLine("Missing register in entry.");
+                        //    break;
+                        //}
+                        break;
+                    #endregion
+                    #region SAVE
+                    case "SAVE":
+                        if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
+                        {
+                            switch (_splitBiosInput[1].ToUpper())
+                            {
+                                case "A":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    break;
+                                case "B":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 1);
+                                    programAdress++;
+                                    break;
+                                default:
+                                    WriteToScreen("incorrect register in entry.", _currentScreenLine);
+                                    _currentScreenLine++;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            WriteToScreen("Missing register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region SAVE
-                        case "SAVE":
-                            if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
+                        }
+                        break;
+                    #endregion
+                    #region READ
+                    case "READ":
+                        if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
+                        {
+                            switch (_splitBiosInput[1].ToUpper())
                             {
-                                switch (_splitBiosInput[1].ToUpper())
-                                {
-                                    case "A":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        break;
-                                    case "B":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SAVE);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 1);
-                                        programAdress++;
-                                        break;
-                                    default:
-                                        Console.WriteLine("incorrect register in entry.");
-                                        break;
-                                }
+                                case "A":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    break;
+                                case "B":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 1);
+                                    programAdress++;
+                                    break;
+                                default:
+                                    WriteToScreen("Incorrect register in entry.", _currentScreenLine);
+                                    _currentScreenLine++;
+                                    break;
                             }
-                            else
-                            {
-                                Console.WriteLine("Missing register in entry.");
-                                break;
-                            }
+                        }
+                        else
+                        {
+                            WriteToScreen("Missing register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region READ
-                        case "READ":
-                            if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
-                            {
-                                switch (_splitBiosInput[1].ToUpper())
-                                {
-                                    case "A":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        break;
-                                    case "B":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.READ);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 1);
-                                        programAdress++;
-                                        break;
-                                    default:
-                                        Console.WriteLine("Incorrect register in entry.");
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("Missing register in entry.");
-                                break;
-                            }
+                        }
+                        break;
+                    #endregion
+                    #region ADD
+                    case "ADD":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.ADD);
+                        programAdress++;
+                        break;
+                    #endregion
+                    #region SUB
+                    case "SUB":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.SUB);
+                        programAdress++;
+                        break;
+                    #endregion
+                    #region MUX
+                    case "MUX":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.MUX);
+                        programAdress++;
+                        break;
+                    #endregion
+                    #region DIV
+                    case "DIV":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.DIV);
+                        programAdress++;
+                        break;
+                    #endregion
+                    #region Shift Left
+                    case "SHL":
+                        if (_splitBiosInput.Length < 3)
+                        {
+                            WriteToScreen("Missing value and/or register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region ADD
-                        case "ADD":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.ADD);
-                            programAdress++;
+                        }
+                        if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
+                        {
+                            switch (_splitBiosInput[1].ToUpper())
+                            {
+                                case "A":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                                    programAdress++;
+                                    break;
+                                case "B":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 1);
+                                    programAdress++;
+                                    WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                                    programAdress++;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            WriteToScreen("Missing or incorrect register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region SUB
-                        case "SUB":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.SUB);
-                            programAdress++;
+                        }
+                        break;
+                    #endregion
+                    #region Shift Right
+                    case "SHR":
+                        if (_splitBiosInput.Length < 3)
+                        {
+                            WriteToScreen("Missing value and/or register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region MUX
-                        case "MUX":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.MUX);
-                            programAdress++;
+                        }
+                        if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
+                        {
+                            switch (_splitBiosInput[1].ToUpper())
+                            {
+                                case "A":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                                    programAdress++;
+                                    break;
+                                case "B":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 1);
+                                    programAdress++;
+                                    WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
+                                    programAdress++;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            WriteToScreen("Missing or incorrect register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region DIV
-                        case "DIV":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.DIV);
-                            programAdress++;
+                        }
+                        break;
+                    #endregion
+                    #region WAIT
+                    case "WAIT":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.WAIT);
+                        programAdress++;
+                        break;
+                    #endregion
+                    #region HALT
+                    case "HALT":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.HALT);
+                        programAdress++;
+                        break;
+                    #endregion
+                    #region DEC
+                    case "DEC":
+                        if (_splitBiosInput.Length < 2)     //making sure the user actually specifies a register
+                        {
+                            WriteToScreen("Missing register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region Shift Left
-                        case "SHL":
-                            if (_splitBiosInput.Length < 3)
+                        }
+                        if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
+                        {
+                            switch (_splitBiosInput[1].ToUpper())
                             {
-                                Console.WriteLine("Missing value and/or register in entry.");
-                                break;
+                                case "A":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    break;
+                                case "B":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    break;
                             }
-                            if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
-                            {
-                                switch (_splitBiosInput[1].ToUpper())
-                                {
-                                    case "A":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
-                                        programAdress++;
-                                        break;
-                                    case "B":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SHL);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 1);
-                                        programAdress++;
-                                        WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
-                                        programAdress++;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("Missing or incorrect register in entry.");
-                                break;
-                            }
+                        }
+                        else
+                        {
+                            WriteToScreen("Missing or incorrect register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region Shift Right
-                        case "SHR":
-                            if (_splitBiosInput.Length < 3)
-                            {
-                                Console.WriteLine("Missing value and/or register in entry.");
-                                break;
-                            }
-                            if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
-                            {
-                                switch (_splitBiosInput[1].ToUpper())
-                                {
-                                    case "A":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
-                                        programAdress++;
-                                        break;
-                                    case "B":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.SHR);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 1);
-                                        programAdress++;
-                                        WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
-                                        programAdress++;
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("Missing or incorrect register in entry.");
-                                break;
-                            }
+                        }
+                        break;
+                    #endregion
+                    #region INC
+                    case "INC":
+                        if (_splitBiosInput.Length < 2)     //making sure the user actually specifies a register
+                        {
+                            WriteToScreen("Missing register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region WAIT
-                        case "WAIT":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.WAIT);
-                            programAdress++;
+                        }
+                        if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
+                        {
+                            switch (_splitBiosInput[1].ToUpper())
+                            {
+                                case "A":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    break;
+                                case "B":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 1);
+                                    programAdress++;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            WriteToScreen("Missing or incorrect register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region HALT
-                        case "HALT":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.HALT);
-                            programAdress++;
+                        }
+                        break;
+                    #endregion
+                    #region Counter Decrement
+                    case "CDE":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.CDE);
+                        break;
+                    #endregion
+                    #region Counter Increment
+                    case "CIN":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.CIN);
+                        break;
+                    #endregion
+                    #region JMP
+                    case "JMP":
+                        if (_splitBiosInput.Length < 2)     //making sure the user actually specifies an address
+                        {
+                            WriteToScreen("Missing register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region DEC
-                        case "DEC":
-                            if (_splitBiosInput.Length < 2)     //making sure the user actually specifies a register
-                            {
-                                Console.WriteLine("Missing register in entry.");
-                                break;
-                            }
-                            if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
-                            {
-                                switch (_splitBiosInput[1].ToUpper())
-                                {
-                                    case "A":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        break;
-                                    case "B":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.DEC);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("Missing or incorrect register in entry.");
-                                break;
-                            }
+                        }
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.JMP);
+                        programAdress++;
+                        _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
+                        programAdress++;
+                        break;
+                    #endregion
+                    #region LOAD
+                    case "LOAD":
+                        if (_splitBiosInput.Length < 3)     //making sure the user actually specifies an address and register
+                        {
+                            WriteToScreen("Missing address and/or register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region INC
-                        case "INC":
-                            if (_splitBiosInput.Length < 2)     //making sure the user actually specifies a register
+                        }
+                        if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
+                        {
+                            switch (_splitBiosInput[2].ToUpper())
                             {
-                                Console.WriteLine("Missing register in entry.");
-                                break;
+                                case "A":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
+                                    programAdress++;
+                                    _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
+                                    programAdress += 2;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    break;
+                                case "B":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
+                                    programAdress++;
+                                    _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
+                                    programAdress += 2;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    break;
                             }
-                            if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
-                            {
-                                switch (_splitBiosInput[1].ToUpper())
-                                {
-                                    case "A":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        break;
-                                    case "B":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.INC);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 1);
-                                        programAdress++;
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("Missing or incorrect register in entry.");
-                                break;
-                            }
+                        }
+                        else
+                        {
+                            WriteToScreen("Missing or incorrect register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region Counter Decrement
-                        case "CDE":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.CDE);
+                        }
+                        break;
+                    #endregion
+                    #region STORE
+                    case "STORE":
+                        if (_splitBiosInput.Length < 3)     //making sure the user actually specifies an address and register
+                        {
+                            WriteToScreen("Missing address and/or register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region Counter Increment
-                        case "CIN":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.CIN);
+                        }
+                        if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
+                        {
+                            switch (_splitBiosInput[1].ToUpper())
+                            {
+                                case "A":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 0);
+                                    programAdress++;
+                                    _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
+                                    programAdress += 2;
+                                    break;
+                                case "B":
+                                    WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
+                                    programAdress++;
+                                    WriteMemory(programAdress, 1);
+                                    programAdress++;
+                                    _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
+                                    programAdress += 2;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            WriteToScreen("Missing or incorrect register in entry.", _currentScreenLine);
+                            _currentScreenLine++;
                             break;
-                        #endregion
-                        #region JMP
-                        case "JMP":
-                            if (_splitBiosInput.Length < 2)     //making sure the user actually specifies an address
-                            {
-                                Console.WriteLine("Missing register in entry.");
-                                break;
-                            }
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.JMP);
-                            programAdress++;
-                            _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
-                            programAdress++;
-                            break;
-                        #endregion
-                        #region LOAD
-                        case "LOAD":
-                            if (_splitBiosInput.Length < 3)     //making sure the user actually specifies an address and register
-                            {
-                                Console.WriteLine("Missing address and/or register in entry.");
-                                break;
-                            }
-                            if (_splitBiosInput[2].ToUpper().Equals('A') || _splitBiosInput[2].ToUpper().Equals('B') || !(_splitBiosInput[2].Equals("")))
-                            {
-                                switch (_splitBiosInput[2].ToUpper())
-                                {
-                                    case "A":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
-                                        programAdress++;
-                                        _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
-                                        programAdress += 2;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        break;
-                                    case "B":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.LOAD);
-                                        programAdress++;
-                                        _writeAdress(Convert.ToInt32(_splitBiosInput[1]), programAdress);
-                                        programAdress += 2;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("Missing or incorrect register in entry.");
-                                break;
-                            }
-                            break;
-                        #endregion
-                        #region STORE
-                        case "STORE":
-                            if (_splitBiosInput.Length < 3)     //making sure the user actually specifies an address and register
-                            {
-                                Console.WriteLine("Missing address and/or register in entry.");
-                                break;
-                            }
-                            if (_splitBiosInput[1].ToUpper().Equals('A') || _splitBiosInput[1].ToUpper().Equals('B') || !(_splitBiosInput[1].Equals("")))
-                            {
-                                switch (_splitBiosInput[1].ToUpper())
-                                {
-                                    case "A":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 0);
-                                        programAdress++;
-                                        _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
-                                        programAdress += 2;
-                                        break;
-                                    case "B":
-                                        WriteMemory(programAdress, (int)CPU.InstructionSet.STORE);
-                                        programAdress++;
-                                        WriteMemory(programAdress, 1);
-                                        programAdress++;
-                                        _writeAdress(Convert.ToInt32(_splitBiosInput[2]), programAdress);
-                                        programAdress += 2;
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("Missing or incorrect register in entry.");
-                                break;
-                            }
-                            break;
-                        #endregion
-                        #region Reset
-                        case "RST":
-                            WriteMemory(programAdress, (int)CPU.InstructionSet.RST);
-                            programAdress++;
-                            break;
-                        #endregion
-                        default:
-                            Console.WriteLine("Unknown command.");
-                            break;
-                    }
-                }
-                else
-                {
-
+                        }
+                        break;
+                    #endregion
+                    #region Reset
+                    case "RST":
+                        WriteMemory(programAdress, (int)CPU.InstructionSet.RST);
+                        programAdress++;
+                        break;
+                    #endregion
+                    default:
+                        WriteToScreen("Unknown command.", _currentScreenLine);
+                        _currentScreenLine++;
+                        break;
                 }
             }
-            WriteMemory(0, (byte)programAdress);
+            _collectingLine = true;
+            //WriteMemory(0, (byte)programAdress);
         }
 
         public void DoDumpRegisters()
@@ -633,8 +702,8 @@ namespace Hacking_Game
 
             foreach (string LineToWrite in LinesToWrite)
             {
-                systemMemory.WriteMemSequence(_graphicsMemoryFirstByte + lineNumber , DoCreateByteArray(LineToWrite));
-                lineNumber += 80;
+                WriteToScreen(LineToWrite, lineNumber);
+                lineNumber++;
             }
             //Console.WriteLine("Dumping memory:");
             //for (int i = 1; i < ProgramMemorySize; i++)
@@ -651,23 +720,9 @@ namespace Hacking_Game
             //}
         }
 
-        private void _writeAdress(int Adress, int ProgramAdress)
+        private void WriteToScreen(string StringToWrite, int LineToWriteAt)
         {
-            //WriteMemory(programAdress, Convert.ToByte(_splitBiosInput[2]));
-            int mostSignificant = 0;
-            int leastSignificant = 0;
-            if (Adress > 255)
-            {
-                mostSignificant = Adress / 255;
-                leastSignificant = Adress % 255;
-            }
-            else
-            {
-                mostSignificant = 0;
-                leastSignificant = Adress;
-            }
-            WriteMemory(ProgramAdress, (byte)mostSignificant);
-            WriteMemory(ProgramAdress + 1, (byte)leastSignificant);
+            graphicsMemory.WriteMemSequence(_graphicsMemoryFirstByte + (80 * LineToWriteAt), DoCreateByteArray(StringToWrite));
         }
 
         private byte[] DoCreateByteArray(string TextToConvert)
@@ -692,7 +747,7 @@ namespace Hacking_Game
             int address = 256;
             byte[] byteToWrite = { 84, 101, 115, 116, 32 };
             int bytecounter = 0;
-            Console.SetCursorPosition(0, 0);
+            _currentScreenLine = 0;
             for (int i = 0; i < _graphicsMemorySize; i++)
             {
                 systemMemory.WriteMemByte(address, byteToWrite[bytecounter]);
