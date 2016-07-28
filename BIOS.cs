@@ -29,7 +29,7 @@ namespace Hacking_Game
         private int _charactersPerLine = 80;
         private int _linesPerScreen = 25;
 
-        string _biosInput;
+        private string _biosInput;
 
         public bool InBios { get { return _inInterpreter; } }
         public byte[] ProgramToRun { get { return _programToRun; } }
@@ -174,16 +174,16 @@ namespace Hacking_Game
             DoRunningInterpreter();
 
             NewKeyboardState = Keyboard.GetState();
-            Keys[] CurrentKey = NewKeyboardState.GetPressedKeys();
+            //Keys[] CurrentKey = NewKeyboardState.GetPressedKeys();
 
-            if (NewKeyboardState.IsKeyUp(Keys.Enter))
+            if (NewKeyboardState.IsKeyUp(Keys.Enter) && OldKeyboardState.IsKeyDown(Keys.Enter))
             {
                 _collectingLine = false;
                 DoRunInterpreter(KeyboardInputLine);
                 KeyboardInputLine = "";
             } else
             {
-                if (NewKeyboardState.IsKeyUp(CurrentKey[0]))
+                if (NewKeyboardState.IsKeyUp())
                 {
                     KeyboardInputLine = KeyboardInputLine + CurrentKey[0].ToString();
                 }
@@ -725,6 +725,18 @@ namespace Hacking_Game
             graphicsMemory.WriteMemSequence(_graphicsMemoryFirstByte + (80 * LineToWriteAt), DoCreateByteArray(StringToWrite));
         }
 
+        private void RollTextUp()
+        {
+            if(_currentScreenLine > 25)
+            {
+                for (int i = 80; i < _graphicsMemorySize; i++)
+                {
+                    systemMemory.WriteMemByte(_graphicsMemoryFirstByte + _currentScreenLine, (byte)systemMemory.ReadMemByte(i));
+                }
+                _currentScreenLine = 25;
+            }
+        }
+
         private byte[] DoCreateByteArray(string TextToConvert)
         {
             byte[] _returnText = new byte[TextToConvert.Length];
@@ -793,7 +805,6 @@ namespace Hacking_Game
                     characterCounter++;
                 }
             }
-            
 
             // Too Slow!
             //for (int memPosition = 0; memPosition < _graphicsMemorySize; memPosition++)
